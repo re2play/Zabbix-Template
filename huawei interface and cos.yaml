@@ -1,0 +1,1281 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 57b7ae836ca64446ba2c296389c009b7
+      name: Templates/Modules
+  templates:
+    - uuid: 2aabb68aaa66440a90e6d32835dd96b1
+      template: 'Template Module True Interfaces SNMPv2_Huawei'
+      name: 'Template Module True Interfaces SNMPv2_Huawei'
+      description: |
+        Template Interfaces version: 0.14
+        MIBs used:
+        IF-MIB
+      groups:
+        - name: Templates/Modules
+      items:
+        - uuid: b47f08e0b9cf47968f6ab09f52e57687
+          name: 'Network Interfaces Discovery'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#ADMIN},1.3.6.1.2.1.2.2.1.7,{#IFALIAS},1.3.6.1.2.1.31.1.1.1.18,{#IFNAME},1.3.6.1.2.1.31.1.1.1.1,{#OPER},.1.3.6.1.2.1.2.2.1.8]'
+          key: net.if.discovery
+          delay: 1h
+          history: '0'
+          trends: '0'
+          value_type: TEXT
+      discovery_rules:
+        - uuid: be7dcf491f71418baad3c09367916149
+          name: 'Network Interfaces Discovery'
+          type: DEPENDENT
+          key: net.if
+          delay: '0'
+          filter:
+            conditions:
+              - macro: '{#ADMIN}'
+                value: '1'
+                formulaid: A
+              - macro: '{#IFALIAS}'
+                value: \w+
+                formulaid: B
+              - macro: '{#IFNAME}'
+                value: '@Network interfaces for discovery'
+                formulaid: C
+          description: 'Discovering interfaces from IF-MIB. Interfaces with down(2) Administrative Status are not discovered.'
+          item_prototypes:
+            - uuid: edffb544ed984375b02e3fea3839816e
+              name: 'Interface {#IFNAME}({#IFALIAS}): FSC Error'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.41.1.6.1.1.12.{#SNMPINDEX}'
+              key: 'net.if.fscError[{#SNMPINDEX}]'
+              delay: 5m
+              history: 1w
+              trends: 1d
+              value_type: FLOAT
+              units: error
+              description: |
+                MIB: IF-MIB
+                An estimate of the interface's current bandwidth in units of 1,000,000 bits per second.  If this object reports a value of `n' then the speed of the interface is somewhere in the range of `n-500,000' to`n+499,999'.  For interfaces which do not vary in bandwidth or for those where no accurate estimation can be made, this object should contain the nominal bandwidth.  For a sub-layer which has no concept of bandwidth, this object should be zero.
+              preprocessing:
+                - type: SIMPLE_CHANGE
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+              trigger_prototypes:
+                - uuid: 1d5111d51d4447049b0a4dd248d79136
+                  expression: 'min(/Template Module True Interfaces SNMPv2_Huawei/net.if.fscError[{#SNMPINDEX}],#2)>{$IF_FSC_ERRORS_THOLD}'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'max(/Template Module True Interfaces SNMPv2_Huawei/net.if.fscError[{#SNMPINDEX}],#2)<{$IF_FSC_ERRORS_THOLD}*0.1'
+                  name: 'Interface {#IFNAME}({#IFALIAS}): Увеличение количества FSC(CRC) ошибок'
+                  priority: AVERAGE
+                  description: 'Increase FCS(CRC) error value: {ITEM.LASTVALUE1}'
+                  tags:
+                    - tag: error
+                      value: CRC
+                    - tag: system
+                      value: CORE
+            - uuid: fe8f4434da6f4f35806ddbf9e0f18700
+              name: 'Interface {#IFNAME}({#IFALIAS}): Inbound packets discarded'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.2.2.1.13.{#SNMPINDEX}'
+              key: 'net.if.in.discards[ifInDiscards.{#SNMPINDEX}]'
+              delay: 5m
+              history: 1w
+              units: pps
+              description: |
+                MIB: IF-MIB
+                The number of inbound packets which were chosen to be discarded
+                even though no errors had been detected to prevent their being deliverable to a higher-layer protocol.
+                One possible reason for discarding such a packet could be to free up buffer space.
+                Discontinuities in the value of this counter can occur at re-initialization of the management system,
+                and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: ab7f1aaeff564517a046a00434a9a009
+              name: 'Interface {#IFNAME}({#IFALIAS}): Inbound packets with errors'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.2.2.1.14.{#SNMPINDEX}'
+              key: 'net.if.in.errors[ifInErrors.{#SNMPINDEX}]'
+              delay: 5m
+              history: 1w
+              units: pps
+              description: |
+                MIB: IF-MIB
+                For packet-oriented interfaces, the number of inbound packets that contained errors preventing them from being deliverable to a higher-layer protocol.  For character-oriented or fixed-length interfaces, the number of inbound transmission units that contained errors preventing them from being deliverable to a higher-layer protocol. Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: 7c11e710f860464f89f930ca7ad77d8d
+              name: 'Interface {#IFNAME}({#IFALIAS}): input BroadcastPkts'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.31.1.1.1.9.{#SNMPINDEX}'
+              key: 'net.if.in[ifHCInBroadcastPkts.{#SNMPINDEX}]'
+              delay: 5m
+              history: 30d
+              units: pps
+              description: |
+                MIB: IF-MIB
+                The total number of octets received on the interface,including framing characters.  This object is a 64-bit version of ifInOctets. Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: 3abf52dc6f0747e1812d140923142b75
+              name: 'Interface {#IFNAME}({#IFALIAS}): input MulticastPkts'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.31.1.1.1.8.{#SNMPINDEX}'
+              key: 'net.if.in[ifHCInMulticastPkts.{#SNMPINDEX}]'
+              delay: 5m
+              history: 30d
+              units: pps
+              description: |
+                MIB: IF-MIB
+                The total number of octets received on the interface,including framing characters.  This object is a 64-bit version of ifInOctets. Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: aa2111738cf64f2db537872d469c30b3
+              name: 'Interface {#IFNAME}({#IFALIAS}): Bits received'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.31.1.1.1.6.{#SNMPINDEX}'
+              key: 'net.if.in[ifHCInOctets.{#SNMPINDEX}]'
+              delay: 5m
+              history: 30d
+              units: bps
+              description: |
+                MIB: IF-MIB
+                The total number of octets received on the interface,including framing characters.  This object is a 64-bit version of ifInOctets. Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: f080b697067047d698c8d4e61440710a
+              name: 'Interface {#IFNAME}({#IFALIAS}): input UnicastPkts'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.11.{#SNMPINDEX}'
+              key: 'net.if.in[ifInUnicastPkts.{#SNMPINDEX}]'
+              delay: 5m
+              history: 30d
+              units: pps
+              description: |
+                MIB: IF-MIB
+                The total number of octets received on the interface,including framing characters.  This object is a 64-bit version of ifInOctets. Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: 55243312142546a9aaaa9e964d9cd0ff
+              name: 'Interface {#IFNAME}({#IFALIAS}): Outbound packets discarded'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.2.2.1.19.{#SNMPINDEX}'
+              key: 'net.if.out.discards[ifOutDiscards.{#SNMPINDEX}]'
+              delay: 5m
+              history: 1w
+              units: pps
+              description: |
+                MIB: IF-MIB
+                The number of outbound packets which were chosen to be discarded
+                even though no errors had been detected to prevent their being deliverable to a higher-layer protocol.
+                One possible reason for discarding such a packet could be to free up buffer space.
+                Discontinuities in the value of this counter can occur at re-initialization of the management system,
+                and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: 0682b4e5e02e4bde9cc42295bcd32075
+              name: 'Interface {#IFNAME}({#IFALIAS}): Outbound packets with errors'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.2.2.1.20.{#SNMPINDEX}'
+              key: 'net.if.out.errors[ifOutErrors.{#SNMPINDEX}]'
+              delay: 5m
+              history: 1w
+              units: pps
+              description: |
+                MIB: IF-MIB
+                For packet-oriented interfaces, the number of outbound packets that contained errors preventing them from being deliverable to a higher-layer protocol.  For character-oriented or fixed-length interfaces, the number of outbound transmission units that contained errors preventing them from being deliverable to a higher-layer protocol. Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: 5104d84f24f24dbdb9befeecb9440128
+              name: 'Interface {#IFNAME}({#IFALIAS}): output BroadcastPkts'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.31.1.1.1.13.{#SNMPINDEX}'
+              key: 'net.if.out[ifHCOutBroadcastPkts.{#SNMPINDEX}]'
+              delay: 5m
+              history: 30d
+              units: pps
+              description: |
+                MIB: IF-MIB
+                The total number of octets received on the interface,including framing characters.  This object is a 64-bit version of ifInOctets. Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: b37feb110abd457ebb96522a20b93a80
+              name: 'Interface {#IFNAME}({#IFALIAS}): output MulticastPkts'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.31.1.1.1.12.{#SNMPINDEX}'
+              key: 'net.if.out[ifHCOutMulticastPkts.{#SNMPINDEX}]'
+              delay: 5m
+              history: 30d
+              units: pps
+              description: |
+                MIB: IF-MIB
+                The total number of octets received on the interface,including framing characters.  This object is a 64-bit version of ifInOctets. Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: 255692e2fc1b4b63ae7e339b5ddb2d39
+              name: 'Interface {#IFNAME}({#IFALIAS}): Bits sent'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.31.1.1.1.10.{#SNMPINDEX}'
+              key: 'net.if.out[ifHCOutOctets.{#SNMPINDEX}]'
+              delay: 5m
+              history: 30d
+              units: bps
+              description: |
+                MIB: IF-MIB
+                The total number of octets transmitted out of the interface, including framing characters.  This object is a 64-bit version of ifOutOctets.Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: a575710627d7426aa3a28864c2506771
+              name: 'Interface {#IFNAME}({#IFALIAS}): output UnicastPkts'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.17.{#SNMPINDEX}'
+              key: 'net.if.out[ifOutUnicastPkts.{#SNMPINDEX}]'
+              delay: 5m
+              history: 30d
+              units: pps
+              description: |
+                MIB: IF-MIB
+                The total number of octets received on the interface,including framing characters.  This object is a 64-bit version of ifInOctets. Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: a674ed39d40b44139f9141ca0759eb44
+              name: 'Interface {#IFNAME}({#IFALIAS}): HighSpeed'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.31.1.1.1.15.{#SNMPINDEX}'
+              key: 'net.if.speed[ifHighSpeed.{#SNMPINDEX}]'
+              delay: 10m
+              history: 1w
+              trends: 1d
+              units: bps
+              description: |
+                MIB: IF-MIB
+                An estimate of the interface's current bandwidth in units of 1,000,000 bits per second.  If this object reports a value of `n' then the speed of the interface is somewhere in the range of `n-500,000' to`n+499,999'.  For interfaces which do not vary in bandwidth or for those where no accurate estimation can be made, this object should contain the nominal bandwidth.  For a sub-layer which has no concept of bandwidth, this object should be zero.
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '1000000'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 300s
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: 84230b5f3e494eb89bc56d6b1cfc1dd4
+              name: 'Interface {#IFNAME}({#IFALIAS}): Admin status'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.2.2.1.7.{#SNMPINDEX}'
+              key: 'net.if.status[ifAdminStatus.{#SNMPINDEX}]'
+              delay: 2m
+              history: 14d
+              trends: 1d
+              description: |
+                MIB: IF-MIB
+                The current operational state of the interface.
+                - The testing(3) state indicates that no operational packet scan be passed
+                - If ifAdminStatus is down(2) then ifOperStatus should be down(2)
+                - If ifAdminStatus is changed to up(1) then ifOperStatus should change to up(1) if the interface is ready to transmit and receive network traffic
+                - It should change todormant(5) if the interface is waiting for external actions (such as a serial line waiting for an incoming connection)
+                - It should remain in the down(2) state if and only if there is a fault that prevents it from going to the up(1) state
+                - It should remain in the notPresent(6) state if the interface has missing(typically, hardware) components.
+              valuemap:
+                name: 'IF-MIB::ifOperStatus'
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 120s
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: 1b8a4d21c3a04425b3082a29775f244b
+              name: 'Interface {#IFNAME}({#IFALIAS}): Operational status'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.2.2.1.8.{#SNMPINDEX}'
+              key: 'net.if.status[ifOperStatus.{#SNMPINDEX}]'
+              history: 14d
+              trends: 1d
+              description: |
+                MIB: IF-MIB
+                The current operational state of the interface.
+                - The testing(3) state indicates that no operational packet scan be passed
+                - If ifAdminStatus is down(2) then ifOperStatus should be down(2)
+                - If ifAdminStatus is changed to up(1) then ifOperStatus should change to up(1) if the interface is ready to transmit and receive network traffic
+                - It should change todormant(5) if the interface is waiting for external actions (such as a serial line waiting for an incoming connection)
+                - It should remain in the down(2) state if and only if there is a fault that prevents it from going to the up(1) state
+                - It should remain in the notPresent(6) state if the interface has missing(typically, hardware) components.
+              valuemap:
+                name: 'IF-MIB::ifOperStatus'
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 120s
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: 9536a6910b2f47bc851cdb75e843c32b
+              name: 'Interface {#IFNAME}({#IFALIAS}): Description'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.31.1.1.1.18.{#SNMPINDEX}'
+              key: 'net.if[ifAlias.{#SNMPINDEX}]'
+              delay: 10m
+              history: 1h
+              trends: '0'
+              value_type: TEXT
+              description: |
+                MIB: IF-MIB
+                This object is an 'alias' name for the interface as specified by a network manager, and provides a non-volatile 'handle' for the interface. On the first instantiation of an interface, the value of ifAlias associated with that interface is the zero-length string. As and when a value is written into an instance of ifAlias through a network management set operation, then the agent must retain the supplied value in the ifAlias instance associated with the same interface for as long as that interface remains instantiated, including across all re- initializations/reboots of the network management system, including those which result in a change of the interface's ifIndex value.
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 120s
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+          trigger_prototypes:
+            - uuid: b3d51d6b0add43a4a64b7ef34022a35f
+              expression: 'find(/Template Module True Interfaces SNMPv2_Huawei/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_BCAST")=0 and min(/Template Module True Interfaces SNMPv2_Huawei/net.if.in[ifHCInBroadcastPkts.{#SNMPINDEX}],#2)>{$BCAST_LIMIT_MAX}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'find(/Template Module True Interfaces SNMPv2_Huawei/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_BCAST")=1 or max(/Template Module True Interfaces SNMPv2_Huawei/net.if.in[ifHCInBroadcastPkts.{#SNMPINDEX}],#2)<0.5*{$BCAST_LIMIT_MAX}'
+              name: 'Interface {#IFNAME}({#IFALIAS}): broadcast traffic > {$BCAST_LIMIT_MAX} pps.'
+              priority: HIGH
+              tags:
+                - tag: system
+                  value: CORE
+            - uuid: bcda40e38961477a8411a901fd9b4646
+              expression: 'find(/Template Module True Interfaces SNMPv2_Huawei/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_BCAST")=0 and min(/Template Module True Interfaces SNMPv2_Huawei/net.if.in[ifHCInBroadcastPkts.{#SNMPINDEX}],#2)>{$BCAST_LIMIT}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'find(/Template Module True Interfaces SNMPv2_Huawei/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_BCAST")=1 or max(/Template Module True Interfaces SNMPv2_Huawei/net.if.in[ifHCInBroadcastPkts.{#SNMPINDEX}],#2)<0.5*{$BCAST_LIMIT}'
+              name: 'Interface {#IFNAME}({#IFALIAS}): broadcast traffic > {$BCAST_LIMIT} pps.'
+              priority: WARNING
+              description: 'Broadcast: Input {ITEM.LASTVALUE2}'
+              dependencies:
+                - name: 'Interface {#IFNAME}({#IFALIAS}): broadcast traffic > {$BCAST_LIMIT_MAX} pps.'
+                  expression: 'find(/Template Module True Interfaces SNMPv2_Huawei/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_BCAST")=0 and min(/Template Module True Interfaces SNMPv2_Huawei/net.if.in[ifHCInBroadcastPkts.{#SNMPINDEX}],#2)>{$BCAST_LIMIT_MAX}'
+                  recovery_expression: 'find(/Template Module True Interfaces SNMPv2_Huawei/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_BCAST")=1 or max(/Template Module True Interfaces SNMPv2_Huawei/net.if.in[ifHCInBroadcastPkts.{#SNMPINDEX}],#2)<0.5*{$BCAST_LIMIT_MAX}'
+            - uuid: fec256a603454b8488c86c1fba48bd22
+              expression: 'last(/Template Module True Interfaces SNMPv2_Huawei/net.if.status[ifAdminStatus.{#SNMPINDEX}])=1 and find(/Template Module True Interfaces SNMPv2_Huawei/net.if[ifAlias.{#SNMPINDEX}],,"regexp","^FREE$")=1'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'last(/Template Module True Interfaces SNMPv2_Huawei/net.if.status[ifAdminStatus.{#SNMPINDEX}])=2 or find(/Template Module True Interfaces SNMPv2_Huawei/net.if[ifAlias.{#SNMPINDEX}],,"regexp","^FREE$")=0'
+              name: 'Interface {#IFNAME}({#IFALIAS}): FREE interface Admin status UP'
+              priority: INFO
+              description: |
+                Last value: {ITEM.LASTVALUE1}.
+                Interface is down
+            - uuid: d54d4e5c2ac840158ecdcf9187e0ab39
+              expression: '(avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.in[ifHCInOctets.{#SNMPINDEX}],5m)>({$IF_UTIL_INFO}/100)*last(/Template Module True Interfaces SNMPv2_Huawei/net.if.speed[ifHighSpeed.{#SNMPINDEX}]) or avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.out[ifHCOutOctets.{#SNMPINDEX}],5m)>({$IF_UTIL_INFO}/100)*last(/Template Module True Interfaces SNMPv2_Huawei/net.if.speed[ifHighSpeed.{#SNMPINDEX}])) and last(/Template Module True Interfaces SNMPv2_Huawei/net.if.speed[ifHighSpeed.{#SNMPINDEX}])>0 and find(/Template Module True Interfaces SNMPv2_Huawei/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_PROBE|CUSTOMER")=0 and (avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.out[ifHCOutOctets.{#SNMPINDEX}],5m)< last(/Template Module True Interfaces SNMPv2_Huawei/net.if.speed[ifHighSpeed.{#SNMPINDEX}]) and avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.in[ifHCInOctets.{#SNMPINDEX}],5m)< last(/Template Module True Interfaces SNMPv2_Huawei/net.if.speed[ifHighSpeed.{#SNMPINDEX}]))'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: '(avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.in[ifHCInOctets.{#SNMPINDEX}],5m)<=(({$IF_UTIL_INFO}-3)/100)*last(/Template Module True Interfaces SNMPv2_Huawei/net.if.speed[ifHighSpeed.{#SNMPINDEX}]) and avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.out[ifHCOutOctets.{#SNMPINDEX}],5m)<=(({$IF_UTIL_INFO}-3)/100)*last(/Template Module True Interfaces SNMPv2_Huawei/net.if.speed[ifHighSpeed.{#SNMPINDEX}])) or find(/Template Module True Interfaces SNMPv2_Huawei/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_PROBE|CUSTOMER")=1'
+              name: 'Interface {#IFNAME}({#IFALIAS}): High bandwidth usage > {$IF_UTIL_INFO}%.'
+              priority: WARNING
+              description: |
+                Input last value: {ITEM.LASTVALUE1},
+                Output las tvalue: {ITEM.LASTVALUE3}.
+              dependencies:
+                - name: 'Interface {#IFNAME}({#IFALIAS}): High bandwidth usage > {$IF_UTIL_MAX}%.'
+                  expression: |
+                    (avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.in[ifHCInOctets.{#SNMPINDEX}],5m)>({$IF_UTIL_MAX}/100)*last(/Template Module True Interfaces SNMPv2_Huawei/net.if.speed[ifHighSpeed.{#SNMPINDEX}]) or
+                    avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.out[ifHCOutOctets.{#SNMPINDEX}],5m)>({$IF_UTIL_MAX}/100)*last(/Template Module True Interfaces SNMPv2_Huawei/net.if.speed[ifHighSpeed.{#SNMPINDEX}])) and
+                    last(/Template Module True Interfaces SNMPv2_Huawei/net.if.speed[ifHighSpeed.{#SNMPINDEX}])>0 and find(/Template Module True Interfaces SNMPv2_Huawei/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_PROBE|CUSTOMER")=0 and (avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.out[ifHCOutOctets.{#SNMPINDEX}],5m)<
+                    last(/Template Module True Interfaces SNMPv2_Huawei/net.if.speed[ifHighSpeed.{#SNMPINDEX}]) and avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.in[ifHCInOctets.{#SNMPINDEX}],5m)<
+                    last(/Template Module True Interfaces SNMPv2_Huawei/net.if.speed[ifHighSpeed.{#SNMPINDEX}]))
+                  recovery_expression: |
+                    (avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.in[ifHCInOctets.{#SNMPINDEX}],5m)<=(({$IF_UTIL_MAX}-3)/100)*last(/Template Module True Interfaces SNMPv2_Huawei/net.if.speed[ifHighSpeed.{#SNMPINDEX}]) and
+                    avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.out[ifHCOutOctets.{#SNMPINDEX}],5m)<=(({$IF_UTIL_MAX}-3)/100)*last(/Template Module True Interfaces SNMPv2_Huawei/net.if.speed[ifHighSpeed.{#SNMPINDEX}])) or find(/Template Module True Interfaces SNMPv2_Huawei/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_PROBE|CUSTOMER")=1
+            - uuid: 157b00e4d459472692620bd15583fde1
+              expression: |
+                (avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.in[ifHCInOctets.{#SNMPINDEX}],5m)>({$IF_UTIL_MAX}/100)*last(/Template Module True Interfaces SNMPv2_Huawei/net.if.speed[ifHighSpeed.{#SNMPINDEX}]) or
+                avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.out[ifHCOutOctets.{#SNMPINDEX}],5m)>({$IF_UTIL_MAX}/100)*last(/Template Module True Interfaces SNMPv2_Huawei/net.if.speed[ifHighSpeed.{#SNMPINDEX}])) and
+                last(/Template Module True Interfaces SNMPv2_Huawei/net.if.speed[ifHighSpeed.{#SNMPINDEX}])>0 and find(/Template Module True Interfaces SNMPv2_Huawei/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_PROBE|CUSTOMER")=0 and (avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.out[ifHCOutOctets.{#SNMPINDEX}],5m)<
+                last(/Template Module True Interfaces SNMPv2_Huawei/net.if.speed[ifHighSpeed.{#SNMPINDEX}]) and avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.in[ifHCInOctets.{#SNMPINDEX}],5m)<
+                last(/Template Module True Interfaces SNMPv2_Huawei/net.if.speed[ifHighSpeed.{#SNMPINDEX}]))
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: |
+                (avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.in[ifHCInOctets.{#SNMPINDEX}],5m)<=(({$IF_UTIL_MAX}-3)/100)*last(/Template Module True Interfaces SNMPv2_Huawei/net.if.speed[ifHighSpeed.{#SNMPINDEX}]) and
+                avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.out[ifHCOutOctets.{#SNMPINDEX}],5m)<=(({$IF_UTIL_MAX}-3)/100)*last(/Template Module True Interfaces SNMPv2_Huawei/net.if.speed[ifHighSpeed.{#SNMPINDEX}])) or find(/Template Module True Interfaces SNMPv2_Huawei/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_PROBE|CUSTOMER")=1
+              name: 'Interface {#IFNAME}({#IFALIAS}): High bandwidth usage > {$IF_UTIL_MAX}%.'
+              priority: HIGH
+              description: |
+                Input last value: {ITEM.LASTVALUE1},
+                Output lastvalue: {ITEM.LASTVALUE3}.
+              tags:
+                - tag: system
+                  value: CORE
+            - uuid: 9101464dc0c34c808768fadfaceec24f
+              expression: 'last(/Template Module True Interfaces SNMPv2_Huawei/net.if.status[ifOperStatus.{#SNMPINDEX}])=1 and find(/Template Module True Interfaces SNMPv2_Huawei/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_CORE")=1 and (last(/Template Module True Interfaces SNMPv2_Huawei/net.if.in[ifHCInOctets.{#SNMPINDEX}])-last(/Template Module True Interfaces SNMPv2_Huawei/net.if.in[ifHCInOctets.{#SNMPINDEX}],#2))>(last(/Template Module True Interfaces SNMPv2_Huawei/net.if.speed[ifHighSpeed.{#SNMPINDEX}])/100*{$INHS_TRAFIC_LOSS_LIMIT})'
+              name: 'Interface {#IFNAME}({#IFALIAS}): Input traffic loss > {$IN_TRAFIC_LOSS_LIMIT} % from HighSpeed'
+              priority: WARNING
+              description: 'Input: {ITEM.LASTVALUE3}'
+            - uuid: 6c098cc3b11c4e2f9fda29663bb295b1
+              expression: '{$IFCONTROL:"{#IFNAME}"}=1 and (last(/Template Module True Interfaces SNMPv2_Huawei/net.if.status[ifOperStatus.{#SNMPINDEX}])=2 and (last(/Template Module True Interfaces SNMPv2_Huawei/net.if.status[ifOperStatus.{#SNMPINDEX}],#1)<>last(/Template Module True Interfaces SNMPv2_Huawei/net.if.status[ifOperStatus.{#SNMPINDEX}],#2))=1) and find(/Template Module True Interfaces SNMPv2_Huawei/net.if[ifAlias.{#SNMPINDEX}],,"regexp","CUSTOMER|_RESERV|FREE")=0'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'last(/Template Module True Interfaces SNMPv2_Huawei/net.if.status[ifOperStatus.{#SNMPINDEX}])<>2 or last(/Template Module True Interfaces SNMPv2_Huawei/net.if.status[ifAdminStatus.{#SNMPINDEX}])=2 or find(/Template Module True Interfaces SNMPv2_Huawei/net.if[ifAlias.{#SNMPINDEX}],,"regexp","CUSTOMER|_RESERV|FREE")=1'
+              name: 'Interface {#IFNAME}({#IFALIAS}): Link change state UP to DOWN'
+              priority: AVERAGE
+              description: |
+                Last value: {ITEM.LASTVALUE1}.
+                Interface is down
+              manual_close: 'YES'
+              tags:
+                - tag: system
+                  value: CORE
+            - uuid: 93d7cdcc73e14149b80b0be0725eed34
+              expression: 'min(/Template Module True Interfaces SNMPv2_Huawei/net.if.in[ifHCInMulticastPkts.{#SNMPINDEX}],#2)>{$MCAST_LIMIT} and find(/Template Module True Interfaces SNMPv2_Huawei/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_MCAST|_CORE")=0'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/Template Module True Interfaces SNMPv2_Huawei/net.if.in[ifHCInMulticastPkts.{#SNMPINDEX}],#2)<0.5*{$MCAST_LIMIT} or find(/Template Module True Interfaces SNMPv2_Huawei/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_MCAST|_CORE")=1'
+              name: 'Interface {#IFNAME}({#IFALIAS}): multicast traffic > {$MCAST_LIMIT} pps.'
+              priority: WARNING
+              description: 'Multicast: Input {ITEM.LASTVALUE1}'
+            - uuid: c788910a4c9b48de8fd51b48b871b8ac
+              expression: 'last(/Template Module True Interfaces SNMPv2_Huawei/net.if.status[ifOperStatus.{#SNMPINDEX}])=2 and last(/Template Module True Interfaces SNMPv2_Huawei/net.if.status[ifAdminStatus.{#SNMPINDEX}])=1 and find(/Template Module True Interfaces SNMPv2_Huawei/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_RESERV|_PRI|_SEC|^RESERV$|^FREE$")=0'
+              name: 'Interface {#IFNAME}({#IFALIAS}): Operating DOWN and Admin  UP'
+              priority: INFO
+              description: |
+                Last value: {ITEM.LASTVALUE1}.
+                Interface is down
+              dependencies:
+                - name: 'Interface {#IFNAME}({#IFALIAS}): Link change state UP to DOWN'
+                  expression: '{$IFCONTROL:"{#IFNAME}"}=1 and (last(/Template Module True Interfaces SNMPv2_Huawei/net.if.status[ifOperStatus.{#SNMPINDEX}])=2 and (last(/Template Module True Interfaces SNMPv2_Huawei/net.if.status[ifOperStatus.{#SNMPINDEX}],#1)<>last(/Template Module True Interfaces SNMPv2_Huawei/net.if.status[ifOperStatus.{#SNMPINDEX}],#2))=1) and find(/Template Module True Interfaces SNMPv2_Huawei/net.if[ifAlias.{#SNMPINDEX}],,"regexp","CUSTOMER|_RESERV|FREE")=0'
+                  recovery_expression: 'last(/Template Module True Interfaces SNMPv2_Huawei/net.if.status[ifOperStatus.{#SNMPINDEX}])<>2 or last(/Template Module True Interfaces SNMPv2_Huawei/net.if.status[ifAdminStatus.{#SNMPINDEX}])=2 or find(/Template Module True Interfaces SNMPv2_Huawei/net.if[ifAlias.{#SNMPINDEX}],,"regexp","CUSTOMER|_RESERV|FREE")=1'
+            - uuid: f4d5a5ca3ea441f08058cec73905820a
+              expression: |
+                avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.in.discards[ifInDiscards.{#SNMPINDEX}],10m)>{$IF_DISCARDS_WARN}
+                or avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.out.discards[ifOutDiscards.{#SNMPINDEX}],10m)>{$IF_DISCARDS_WARN}
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: |
+                avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.in.discards[ifInDiscards.{#SNMPINDEX}],20m)<{$IF_DISCARDS_WARN}*0.8
+                and avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.out.discards[ifOutDiscards.{#SNMPINDEX}],20m)<{$IF_DISCARDS_WARN}*0.8
+              name: 'Interface {#IFNAME}({#IFALIAS}): Packets discarded rate > {$IF_DISCARDS_WARN} pps.'
+              priority: WARNING
+              description: |
+                Last value Input: {ITEM.LASTVALUE1}.
+                Last value Output: {ITEM.LASTVALUE2}.
+                Recovers when below 80% of {$IF_DISCARDS_WARN} threshold
+              tags:
+                - tag: error
+                  value: Discard
+            - uuid: 39b59ff713a94f85ba45eb4a875ff4ba
+              expression: |
+                avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.in.errors[ifInErrors.{#SNMPINDEX}],10m)>{$IF_ERRORS_WARN}
+                or avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.out.errors[ifOutErrors.{#SNMPINDEX}],10m)>{$IF_ERRORS_WARN}
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: |
+                avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.in.errors[ifInErrors.{#SNMPINDEX}],20m)<{$IF_ERRORS_WARN}*0.1
+                and avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.out.errors[ifOutErrors.{#SNMPINDEX}],20m)<{$IF_ERRORS_WARN}*0.1
+              name: 'Interface {#IFNAME}({#IFALIAS}): Большое количество ошибок > {$IF_ERRORS_WARN}.'
+              priority: WARNING
+              description: |
+                Last value: {ITEM.LASTVALUE1}.
+                Recovers when below 80% of {$IF_ERRORS_WARN:"{#IFNAME}"} threshold
+              dependencies:
+                - name: 'Interface {#IFNAME}({#IFALIAS}): Увеличение количества FSC(CRC) ошибок'
+                  expression: 'min(/Template Module True Interfaces SNMPv2_Huawei/net.if.fscError[{#SNMPINDEX}],#2)>{$IF_FSC_ERRORS_THOLD}'
+                  recovery_expression: 'max(/Template Module True Interfaces SNMPv2_Huawei/net.if.fscError[{#SNMPINDEX}],#2)<{$IF_FSC_ERRORS_THOLD}*0.1'
+              tags:
+                - tag: error
+                  value: error
+            - uuid: 9f91bb8f734644c1bcf085ebbab4ed06
+              expression: |
+                (avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.in[ifHCInOctets.{#SNMPINDEX}],15m)>({$IF_UTIL_MAX_CORE}/100)*last(/Template Module True Interfaces SNMPv2_Huawei/net.if.speed[ifHighSpeed.{#SNMPINDEX}]) or
+                avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.out[ifHCOutOctets.{#SNMPINDEX}],15m)>({$IF_UTIL_MAX_CORE}/100)*last(/Template Module True Interfaces SNMPv2_Huawei/net.if.speed[ifHighSpeed.{#SNMPINDEX}])) and
+                last(/Template Module True Interfaces SNMPv2_Huawei/net.if.speed[ifHighSpeed.{#SNMPINDEX}])>0 and find(/Template Module True Interfaces SNMPv2_Huawei/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_CORE")=1
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: |
+                (avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.in[ifHCInOctets.{#SNMPINDEX}],15m)<(({$IF_UTIL_MAX_CORE}-3)/100)*last(/Template Module True Interfaces SNMPv2_Huawei/net.if.speed[ifHighSpeed.{#SNMPINDEX}]) and
+                avg(/Template Module True Interfaces SNMPv2_Huawei/net.if.out[ifHCOutOctets.{#SNMPINDEX}],15m)<(({$IF_UTIL_MAX_CORE}-3)/100)*last(/Template Module True Interfaces SNMPv2_Huawei/net.if.speed[ifHighSpeed.{#SNMPINDEX}])  and find(/Template Module True Interfaces SNMPv2_Huawei/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_CORE")=1) or find(/Template Module True Interfaces SNMPv2_Huawei/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_CORE")=0
+              name: 'Высокая загрузка интерфейса в ядре сети {#IFNAME}({#IFALIAS}):> {$IF_UTIL_MAX_CORE}%.'
+              priority: HIGH
+              description: |
+                Input last value: {ITEM.LASTVALUE1},
+                Output lastvalue: {ITEM.LASTVALUE3}.
+              tags:
+                - tag: system
+                  value: CORE
+          master_item:
+            key: net.if.discovery
+          overrides:
+            - name: 'Exclude CRC item from Eth-Trunk'
+              step: '1'
+              filter:
+                conditions:
+                  - macro: '{#IFNAME}'
+                    value: Eth-Trunk
+                    formulaid: A
+              operations:
+                - operationobject: ITEM_PROTOTYPE
+                  operator: REGEXP
+                  value: 'FSC Error'
+                  status: DISABLED
+                  discover: NO_DISCOVER
+            - name: 'Exclude CRC trigger from Eth-Trunk'
+              step: '2'
+              filter:
+                conditions:
+                  - macro: '{#IFNAME}'
+                    value: Eth-Trunk
+                    formulaid: A
+              operations:
+                - operationobject: TRIGGER_PROTOTYPE
+                  operator: REGEXP
+                  value: 'Увеличение количества FSC(CRC) ошибок'
+                  status: DISABLED
+                  discover: NO_DISCOVER
+        - uuid: fe61e008b15141dda9850f4d6a12f914
+          name: 'Network Interfaces COS'
+          type: DEPENDENT
+          key: net.if.cos
+          delay: '0'
+          status: DISABLED
+          filter:
+            evaltype: AND
+            conditions:
+              - macro: '{#ADMIN}'
+                value: '1'
+                formulaid: A
+              - macro: '{#IFALIAS}'
+                value: '@filtered interface'
+                operator: NOT_MATCHES_REGEX
+                formulaid: B
+              - macro: '{#IFALIAS}'
+                value: '@Link between our network'
+                formulaid: C
+              - macro: '{#IFALIAS}'
+                value: \w+
+                formulaid: D
+              - macro: '{#IFNAME}'
+                value: '@True Interface discovery Huawei'
+                formulaid: E
+          description: 'Discovering interfaces from IF-MIB. Interfaces with down(2) Administrative Status are not discovered.'
+          item_prototypes:
+            - uuid: ab298a8b87e54218b349119d1fd60d95
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Outbound Bits in Queue 1 BE'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.6.{#SNMPINDEX}.2.1'
+              key: 'hwXQoSPortQueueStatisticsPassBytesRate.1.[{#SNMPINDEX}]'
+              delay: 5m
+              units: bps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: 134dba2bf6ad48aebe58138a2ed1e2a2
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Outbound Bits in Queue 2 AF1'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.6.{#SNMPINDEX}.2.2'
+              key: 'hwXQoSPortQueueStatisticsPassBytesRate.2.[{#SNMPINDEX}]'
+              delay: 5m
+              units: bps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: 6a79ee4c5cf74dba804d07cf85c5dd0f
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Outbound Bits in Queue 3 AF2'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.6.{#SNMPINDEX}.2.3'
+              key: 'hwXQoSPortQueueStatisticsPassBytesRate.3.[{#SNMPINDEX}]'
+              delay: 5m
+              units: bps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: 15e3301a31c64bb2ba2e6af6a9876358
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Outbound Bits in Queue 4 AF3'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.6.{#SNMPINDEX}.2.4'
+              key: 'hwXQoSPortQueueStatisticsPassBytesRate.4.[{#SNMPINDEX}]'
+              delay: 5m
+              units: bps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: 7d7456410c204bf78f8be7e7520941c5
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Outbound Bits in Queue 5 AF4'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.6.{#SNMPINDEX}.2.5'
+              key: 'hwXQoSPortQueueStatisticsPassBytesRate.5.[{#SNMPINDEX}]'
+              delay: 5m
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: bps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: 445687caf7bc4ddc8d58a1161c62cfdb
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Outbound Bits in Queue 6 EF'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.6.{#SNMPINDEX}.2.6'
+              key: 'hwXQoSPortQueueStatisticsPassBytesRate.6.[{#SNMPINDEX}]'
+              delay: 5m
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: bps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: a7aa85a26ab84febad47b6b5bf3bcf95
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Outbound Bits in Queue 7 CS6'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.6.{#SNMPINDEX}.2.7'
+              key: 'hwXQoSPortQueueStatisticsPassBytesRate.7.[{#SNMPINDEX}]'
+              delay: 5m
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: bps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: 5be7deb8ca384038a85b97aee5a3fc23
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Outbound Bits in Queue 8 CS7'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.6.{#SNMPINDEX}.2.8'
+              key: 'hwXQoSPortQueueStatisticsPassBytesRate.8.[{#SNMPINDEX}]'
+              delay: 5m
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: bps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: 1853fda015cc4abf8eef2f61c2d6deac
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Outbound Pps in Queue 1 BE'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.5.{#SNMPINDEX}.2.1'
+              key: 'hwXQoSPortQueueStatisticsPassPacketsRate.1.[{#SNMPINDEX}]'
+              delay: 5m
+              units: pps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: 2ea547b4ceb44fc992a82b284856210d
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Outbound Pps in Queue 2 AF1'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.5.{#SNMPINDEX}.2.2'
+              key: 'hwXQoSPortQueueStatisticsPassPacketsRate.2.[{#SNMPINDEX}]'
+              delay: 5m
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: pps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: ed1558989165468a942c62ba4f2edb6f
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Outbound Pps in Queue 3 AF2'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.5.{#SNMPINDEX}.2.3'
+              key: 'hwXQoSPortQueueStatisticsPassPacketsRate.3.[{#SNMPINDEX}]'
+              delay: 5m
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: pps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: 52d13930e4aa4bcda27325e1476b5223
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Outbound Pps in Queue 4 AF3'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.5.{#SNMPINDEX}.2.4'
+              key: 'hwXQoSPortQueueStatisticsPassPacketsRate.4.[{#SNMPINDEX}]'
+              delay: 5m
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: pps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: 23405bc244024729a4bb623ce2c522bc
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Outbound Pps in Queue 5 AF4'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.5.{#SNMPINDEX}.2.5'
+              key: 'hwXQoSPortQueueStatisticsPassPacketsRate.5.[{#SNMPINDEX}]'
+              delay: 5m
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: pps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: 80978928758148f384b8135b29fda4e6
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Outbound Pps in Queue 6 EF'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.5.{#SNMPINDEX}.2.6'
+              key: 'hwXQoSPortQueueStatisticsPassPacketsRate.6.[{#SNMPINDEX}]'
+              delay: 5m
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: pps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: b44b7a5bb802432eb5f4145b81f6f3db
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Outbound Pps in Queue 7 CS6'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.5.{#SNMPINDEX}.2.7'
+              key: 'hwXQoSPortQueueStatisticsPassPacketsRate.7.[{#SNMPINDEX}]'
+              delay: 5m
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: pps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: 4b40d1417f6e46cf9ce71d00406062e0
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Outbound Pps in Queue 8 CS7'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.5.{#SNMPINDEX}.2.8'
+              key: 'hwXQoSPortQueueStatisticsPassPacketsRate.8.[{#SNMPINDEX}]'
+              delay: 5m
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: pps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: e3005a7229ae47e2b29113b44715fe56
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Discard Outbound Bits in Queue 1 BE'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.8.{#SNMPINDEX}.2.1'
+              key: 'hwXQoSPortQueueStatisticsTotalDiscardBytes.1.[{#SNMPINDEX}]'
+              delay: 5m
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: bps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: 361ed9f7e80c4382a70b634857431cfb
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Discard Outbound Bits in Queue 2 AF1'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.8.{#SNMPINDEX}.2.2'
+              key: 'hwXQoSPortQueueStatisticsTotalDiscardBytes.2.[{#SNMPINDEX}]'
+              delay: 5m
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: bps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: f17c423419b64b79a60a608e1315feab
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Discard Outbound Bits in Queue 3 AF2'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.8.{#SNMPINDEX}.2.3'
+              key: 'hwXQoSPortQueueStatisticsTotalDiscardBytes.3.[{#SNMPINDEX}]'
+              delay: 5m
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: bps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: 3287803dd0d7489f93b72c171846507a
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Discard Outbound Bits in Queue 4 AF3'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.8.{#SNMPINDEX}.2.4'
+              key: 'hwXQoSPortQueueStatisticsTotalDiscardBytes.4.[{#SNMPINDEX}]'
+              delay: 5m
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: bps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: d303e61dac584398aece616bf65e1bc0
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Discard Outbound Bits in Queue 5 AF4'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.8.{#SNMPINDEX}.2.5'
+              key: 'hwXQoSPortQueueStatisticsTotalDiscardBytes.5.[{#SNMPINDEX}]'
+              delay: 5m
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: bps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: 2377d9c0ffae413aa7db76f6635e3dbf
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Discard Outbound Bits in Queue 6 EF'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.8.{#SNMPINDEX}.2.6'
+              key: 'hwXQoSPortQueueStatisticsTotalDiscardBytes.6.[{#SNMPINDEX}]'
+              delay: 5m
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: bps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: e7702cfbd813411b90e63ff8810beae4
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Discard Outbound Bits in Queue 7 CS6'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.8.{#SNMPINDEX}.2.7'
+              key: 'hwXQoSPortQueueStatisticsTotalDiscardBytes.7.[{#SNMPINDEX}]'
+              delay: 5m
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: bps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: 0da2af89e8c64e918cc41c835b7237d2
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Discard Outbound Bits in Queue 8 CS7'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.8.{#SNMPINDEX}.2.8'
+              key: 'hwXQoSPortQueueStatisticsTotalDiscardBytes.8.[{#SNMPINDEX}]'
+              delay: 5m
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: bps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: 67fa05b4d2214b5b897f89c9bfaf107b
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Discard Outbound  pps in Queue 1 BE'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.7.{#SNMPINDEX}.2.1'
+              key: 'hwXQoSPortQueueStatisticsTotalDiscardPackets.1.[{#SNMPINDEX}]'
+              delay: 5m
+              units: pps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: 8c2db17b2350401c851c3d9a5d247370
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Discard Outbound  pps in Queue 2 AF1'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.7.{#SNMPINDEX}.2.2'
+              key: 'hwXQoSPortQueueStatisticsTotalDiscardPackets.2.[{#SNMPINDEX}]'
+              delay: 5m
+              units: pps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: a238f79e5b014300985982aeb1ff4042
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Discard Outbound  pps in Queue 3 AF2'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.7.{#SNMPINDEX}.2.3'
+              key: 'hwXQoSPortQueueStatisticsTotalDiscardPackets.3.[{#SNMPINDEX}]'
+              delay: 5m
+              units: pps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: 1a6a34d516f44a4daa1202440aa4db4a
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Discard Outbound  pps in Queue 4 AF3'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.7.{#SNMPINDEX}.2.4'
+              key: 'hwXQoSPortQueueStatisticsTotalDiscardPackets.4.[{#SNMPINDEX}]'
+              delay: 5m
+              units: pps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: e81d571094b6402b90f6d8443de8c65c
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Discard Outbound  pps in Queue 5 AF4'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.7.{#SNMPINDEX}.2.5'
+              key: 'hwXQoSPortQueueStatisticsTotalDiscardPackets.5.[{#SNMPINDEX}]'
+              delay: 5m
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: pps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: e7a14cc1120a48ff80ac7de0697c1f33
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Discard Outbound  pps in Queue 6 EF'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.7.{#SNMPINDEX}.2.6'
+              key: 'hwXQoSPortQueueStatisticsTotalDiscardPackets.6.[{#SNMPINDEX}]'
+              delay: 5m
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: pps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: e7512c43f3754de5b90587bdf967fe00
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Discard Outbound  pps in Queue 7 CS6'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.7.{#SNMPINDEX}.2.7'
+              key: 'hwXQoSPortQueueStatisticsTotalDiscardPackets.7.[{#SNMPINDEX}]'
+              delay: 5m
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: pps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: 74f3461b73914468afe615c74113db0e
+              name: 'Interface {#IFNAME}({#IFALIAS}): Total Discard Outbound  pps in Queue 8 CS7'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.32.4.1.1.31.1.7.{#SNMPINDEX}.2.8'
+              key: 'hwXQoSPortQueueStatisticsTotalDiscardPackets.8.[{#SNMPINDEX}]'
+              delay: 5m
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: pps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: CoS
+            - uuid: 4bd54e6bf01c40caa08f7843f8aff18a
+              name: 'Interface {#IFNAME}({#IFALIAS}): Drop % queue 1 BE pps'
+              type: CALCULATED
+              key: 'hwXQoSPortQueueStatisticsTotalDiscardPercent.1.[{#SNMPINDEX}]'
+              delay: 5m
+              units: '%'
+              params: 'last(//hwXQoSPortQueueStatisticsTotalDiscardPackets.1.[{#SNMPINDEX}])/last(//hwXQoSPortQueueStatisticsPassPacketsRate.1.[{#SNMPINDEX}])*100'
+              tags:
+                - tag: Application
+                  value: CoS
+          trigger_prototypes:
+            - uuid: 135226ff079c41deb91a0cc005095fc2
+              expression: 'min(/Template Module True Interfaces SNMPv2_Huawei/hwXQoSPortQueueStatisticsTotalDiscardPackets.1.[{#SNMPINDEX}],#5)>={$OUT_DROP_QUERE_PPS_MAX:"{#IFNAME}"} and avg(/Template Module True Interfaces SNMPv2_Huawei/hwXQoSPortQueueStatisticsPassBytesRate.1.[{#SNMPINDEX}],5m)>={$OUT_TRANSMIT_RATE_QUERE_MAX:"{#IFNAME}"}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/Template Module True Interfaces SNMPv2_Huawei/hwXQoSPortQueueStatisticsTotalDiscardPackets.1.[{#SNMPINDEX}],#2)<{$OUT_DROP_QUERE_PPS_MAX:"{#IFNAME}"}*0.1 or max(/Template Module True Interfaces SNMPv2_Huawei/hwXQoSPortQueueStatisticsPassBytesRate.1.[{#SNMPINDEX}],#2)=0'
+              name: 'Interface {#IFNAME} ({#IFALIAS}): Дропы в очереди 0 > {$OUT_DROP_QUERE_PPS_MAX:"{#IFNAME}"} pps'
+              priority: WARNING
+              dependencies:
+                - name: 'Interface {#IFNAME} ({#IFALIAS}): Кол-во дропов в очереди 0 > {$OUT_DROP_QUERE_PPS_FATAL:"{#IFNAME}"} pps'
+                  expression: 'min(/Template Module True Interfaces SNMPv2_Huawei/hwXQoSPortQueueStatisticsTotalDiscardPackets.1.[{#SNMPINDEX}],#5)>={$OUT_DROP_QUERE_PPS_FATAL:"{#IFNAME}"} and avg(/Template Module True Interfaces SNMPv2_Huawei/hwXQoSPortQueueStatisticsPassBytesRate.1.[{#SNMPINDEX}],5m)>={$OUT_TRANSMIT_RATE_QUERE_MAX:"{#IFNAME}"}'
+                  recovery_expression: 'max(/Template Module True Interfaces SNMPv2_Huawei/hwXQoSPortQueueStatisticsTotalDiscardPackets.1.[{#SNMPINDEX}],#2)<{$OUT_DROP_QUERE_PPS_FATAL:"{#IFNAME}"}*0.1 or max(/Template Module True Interfaces SNMPv2_Huawei/hwXQoSPortQueueStatisticsPassBytesRate.1.[{#SNMPINDEX}],#2)=0'
+              tags:
+                - tag: problems
+                  value: DROP
+            - uuid: c17b6cbb5619462e887f6314a18443d2
+              expression: 'min(/Template Module True Interfaces SNMPv2_Huawei/hwXQoSPortQueueStatisticsTotalDiscardPackets.2.[{#SNMPINDEX}],#5)>={$OUT_DROP_QUERE_PPS_MAX:"{#IFNAME}"} and avg(/Template Module True Interfaces SNMPv2_Huawei/hwXQoSPortQueueStatisticsPassBytesRate.2.[{#SNMPINDEX}],5m)>={$OUT_TRANSMIT_RATE_QUERE_MAX:"{#IFNAME}"}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/Template Module True Interfaces SNMPv2_Huawei/hwXQoSPortQueueStatisticsTotalDiscardPackets.2.[{#SNMPINDEX}],#2)<{$OUT_DROP_QUERE_PPS_MAX:"{#IFNAME}"}*0.1 or max(/Template Module True Interfaces SNMPv2_Huawei/hwXQoSPortQueueStatisticsPassBytesRate.2.[{#SNMPINDEX}],#2)=0'
+              name: 'Interface {#IFNAME} ({#IFALIAS}): Дропы в очереди 1 > {$OUT_DROP_QUERE_PPS_MAX:"{#IFNAME}"} pps'
+              priority: WARNING
+              tags:
+                - tag: problems
+                  value: DROP
+            - uuid: 4d2b6ed27fc34b59a26585543c0de160
+              expression: 'min(/Template Module True Interfaces SNMPv2_Huawei/hwXQoSPortQueueStatisticsTotalDiscardPackets.3.[{#SNMPINDEX}],#5)>={$OUT_DROP_QUERE_PPS_MAX:"{#IFNAME}"} and avg(/Template Module True Interfaces SNMPv2_Huawei/hwXQoSPortQueueStatisticsPassBytesRate.3.[{#SNMPINDEX}],5m)>={$OUT_TRANSMIT_RATE_QUERE_MAX:"{#IFNAME}"}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/Template Module True Interfaces SNMPv2_Huawei/hwXQoSPortQueueStatisticsTotalDiscardPackets.3.[{#SNMPINDEX}],#2)<{$OUT_DROP_QUERE_PPS_MAX:"{#IFNAME}"}*0.1 or max(/Template Module True Interfaces SNMPv2_Huawei/hwXQoSPortQueueStatisticsPassBytesRate.3.[{#SNMPINDEX}],#2)=0'
+              name: 'Interface {#IFNAME} ({#IFALIAS}): Дропы в очереди 2 > {$OUT_DROP_QUERE_PPS_MAX:"{#IFNAME}"} pps'
+              priority: WARNING
+              tags:
+                - tag: problems
+                  value: DROP
+            - uuid: 346012578e85432da87a6f1e5ae8b3bf
+              expression: 'min(/Template Module True Interfaces SNMPv2_Huawei/hwXQoSPortQueueStatisticsTotalDiscardPackets.4.[{#SNMPINDEX}],#5)>={$OUT_DROP_QUERE_PPS_MAX:"{#IFNAME}"} and avg(/Template Module True Interfaces SNMPv2_Huawei/hwXQoSPortQueueStatisticsPassBytesRate.4.[{#SNMPINDEX}],5m)>={$OUT_TRANSMIT_RATE_QUERE_MAX:"{#IFNAME}"}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/Template Module True Interfaces SNMPv2_Huawei/hwXQoSPortQueueStatisticsTotalDiscardPackets.4.[{#SNMPINDEX}],#2)<{$OUT_DROP_QUERE_PPS_MAX:"{#IFNAME}"}*0.1 or max(/Template Module True Interfaces SNMPv2_Huawei/hwXQoSPortQueueStatisticsPassBytesRate.4.[{#SNMPINDEX}],#2)=0'
+              name: 'Interface {#IFNAME} ({#IFALIAS}): Дропы в очереди 3 > {$OUT_DROP_QUERE_PPS_MAX:"{#IFNAME}"} pps'
+              priority: WARNING
+              tags:
+                - tag: problems
+                  value: DROP
+            - uuid: 93ce09333e6b48b4bdbdcb59b0da2427
+              expression: 'min(/Template Module True Interfaces SNMPv2_Huawei/hwXQoSPortQueueStatisticsTotalDiscardPackets.1.[{#SNMPINDEX}],#5)>={$OUT_DROP_QUERE_PPS_FATAL:"{#IFNAME}"} and avg(/Template Module True Interfaces SNMPv2_Huawei/hwXQoSPortQueueStatisticsPassBytesRate.1.[{#SNMPINDEX}],5m)>={$OUT_TRANSMIT_RATE_QUERE_MAX:"{#IFNAME}"}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/Template Module True Interfaces SNMPv2_Huawei/hwXQoSPortQueueStatisticsTotalDiscardPackets.1.[{#SNMPINDEX}],#2)<{$OUT_DROP_QUERE_PPS_FATAL:"{#IFNAME}"}*0.1 or max(/Template Module True Interfaces SNMPv2_Huawei/hwXQoSPortQueueStatisticsPassBytesRate.1.[{#SNMPINDEX}],#2)=0'
+              name: 'Interface {#IFNAME} ({#IFALIAS}): Кол-во дропов в очереди 0 > {$OUT_DROP_QUERE_PPS_FATAL:"{#IFNAME}"} pps'
+              priority: AVERAGE
+              tags:
+                - tag: problems
+                  value: DROP
+                - tag: system
+                  value: CORE
+          master_item:
+            key: net.if.discovery
+      macros:
+        - macro: '{$BCAST_LIMIT}'
+          value: '1000'
+        - macro: '{$BCAST_LIMIT:"ifvirtual"}'
+          value: '999999999999999999999999999999999'
+        - macro: '{$BCAST_LIMIT_MAX}'
+          value: '10000'
+        - macro: '{$IFCONTROL}'
+          value: '1'
+        - macro: '{$IF_DISCARDS_WARN}'
+          value: '200'
+        - macro: '{$IF_ERRORS_WARN}'
+          value: '200'
+        - macro: '{$IF_FSC_ERRORS_THOLD}'
+          value: '100'
+        - macro: '{$IF_UTIL_INFO}'
+          value: '75'
+        - macro: '{$IF_UTIL_MAX}'
+          value: '90'
+        - macro: '{$IF_UTIL_MAX_CORE}'
+          value: '75'
+        - macro: '{$IF_UTIL_MAX_INFO}'
+          value: '43'
+        - macro: '{$INHS_TRAFIC_LOSS_LIMIT}'
+          value: '25'
+        - macro: '{$IN_TRAFIC_LOSS_LIMIT}'
+          value: '50'
+        - macro: '{$MCAST_LIMIT}'
+          value: '1000'
+        - macro: '{$MCAST_LIMIT:"ifvirtual"}'
+          value: '999999999999999999999999999999999'
+        - macro: '{$OUTHS_TRAFIC_LOSS_LIMIT}'
+          value: '25'
+        - macro: '{$OUT_DROP_QUERE_PPS_FATAL}'
+          value: '10000'
+        - macro: '{$OUT_DROP_QUERE_PPS_MAX}'
+          value: '300'
+        - macro: '{$OUT_DROP_QUERE_PPS_MIN}'
+          value: '20'
+        - macro: '{$OUT_TRAFIC_LOSS_LIMIT}'
+          value: '65'
+        - macro: '{$OUT_TRANSMIT_RATE_QUERE_MAX}'
+          value: '10000000'
+      valuemaps:
+        - uuid: 76c720f2d2e049fbb5930a6560886902
+          name: 'IF-MIB::ifOperStatus'
+          mappings:
+            - value: '1'
+              newvalue: up
+            - value: '2'
+              newvalue: down
+            - value: '3'
+              newvalue: testing
+            - value: '4'
+              newvalue: unknown
+            - value: '5'
+              newvalue: dormant
+            - value: '6'
+              newvalue: notPresent
+            - value: '7'
+              newvalue: lowerLayerDown

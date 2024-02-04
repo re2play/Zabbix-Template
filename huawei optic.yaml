@@ -1,0 +1,1019 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 7df96b18c230490a9a0a9e2307226338
+      name: Templates
+    - uuid: 57b7ae836ca64446ba2c296389c009b7
+      name: Templates/Modules
+    - uuid: 36bff6c29af64692839d077febfc7079
+      name: 'Templates/Network devices'
+    - uuid: 31a2c7b235b1462495f4bad087ee8943
+      name: 'Templates Huawei'
+  templates:
+    - uuid: 4d1f6dc367c94e89b2f8db8f2d903cc1
+      template: 'Optical Modules Huawei ME'
+      name: 'Optical Modules Huawei ME'
+      description: 'Template for Huawei VRP Optical Modules Info'
+      groups:
+        - name: Templates
+        - name: 'Templates/Network devices'
+      discovery_rules:
+        - uuid: 0b09505266434e5a9bd9b4a59c674ebe
+          name: 'Network Optical Modules Info'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#IFNAME},1.3.6.1.2.1.47.1.1.1.1.7,{#IFPRESENT},.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.6,{#IFOPER},.1.3.6.1.4.1.2011.5.25.31.1.1.1.1.2,{#IFALIAS},1.3.6.1.2.1.31.1.1.1.18,{#IFNAME2},1.3.6.1.2.1.31.1.1.1.1]'
+          key: net.if.optical.discovery
+          delay: 6h
+          filter:
+            conditions:
+              - macro: '{#IFALIAS}'
+                value: '@Link between our network'
+                formulaid: A
+              - macro: '{#IFNAME}'
+                value: Gigabit
+                formulaid: B
+              - macro: '{#IFNAME}'
+                value: XGigabit
+                formulaid: C
+              - macro: '{#IFOPER}'
+                value: '15'
+                formulaid: D
+              - macro: '{#IFOPER}'
+                value: '16'
+                formulaid: E
+              - macro: '{#IFPRESENT}'
+                value: '-1'
+                operator: NOT_MATCHES_REGEX
+                formulaid: F
+          description: 'Discovering interfaces from IF-MIB. Interfaces with down(2) Administrative Status are not discovered.'
+          item_prototypes:
+            - uuid: 79fa8d91cea54de58835173159e9764c
+              name: 'Optical Module Interface {#IFNAME} {#IFALIAS}: RxPower'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.8.{#SNMPINDEX}'
+              key: 'hwEntityOpticalLaneRxPower[{#SNMPINDEX}]'
+              delay: 5m
+              history: 30d
+              trends: 90d
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 262e052186b24a3c8a7c51886f16528f
+              name: 'Optical Module Interface {#IFNAME} {#IFALIAS}:  Tx Power'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.9.{#SNMPINDEX}'
+              key: 'hwEntityOpticalLaneTxPower[{#SNMPINDEX}]'
+              delay: 5m
+              history: 30d
+              trends: 90d
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 65b4f4fc247744c0a496db0586746f13
+              name: 'Optical Module Interface {#IFNAME}: RxPower High Threshold'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.14.{#SNMPINDEX}'
+              key: 'hwEntityOpticalRxHighThreshold[{#SNMPINDEX}]'
+              delay: 1d
+              history: 30d
+              trends: 90d
+              status: DISABLED
+              discover: NO_DISCOVER
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 34e1717c35ec45498e254fa2446e889e
+              name: 'Optical Module Interface {#IFNAME}: RxPower Low Threshold'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.13.{#SNMPINDEX}'
+              key: 'hwEntityOpticalRxLowThreshold[{#SNMPINDEX}]'
+              delay: 1d
+              history: 30d
+              trends: 90d
+              status: DISABLED
+              discover: NO_DISCOVER
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 78ce145606164c0f90e779246ade9599
+              name: 'Optical Module Interface {#IFNAME} {#IFALIAS}: Temperature'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.4.1.2011.5.25.31.1.1.3.1.5.{#SNMPINDEX}'
+              key: 'hwEntityOpticalTemperature[{#SNMPINDEX}]'
+              delay: 10m
+              history: 30d
+              trends: 90d
+              units: °C
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 0acd8aa01d164997ad899d97f7a78831
+              name: 'Optical Module Interface {#IFNAME}: TxPower High Threshold'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.16.{#SNMPINDEX}'
+              key: 'hwEntityOpticalTxHighThreshold[{#SNMPINDEX}]'
+              delay: 1d
+              history: 30d
+              trends: 90d
+              status: DISABLED
+              discover: NO_DISCOVER
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 35828e28ba78485daa002d5df1748364
+              name: 'Optical Module Interface {#IFNAME}: TxPower Low Threshold'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.15.{#SNMPINDEX}'
+              key: 'hwEntityOpticalTxLowThreshold[{#SNMPINDEX}]'
+              delay: 1d
+              history: 30d
+              trends: 90d
+              status: DISABLED
+              discover: NO_DISCOVER
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 65a23398d8574e4ab98d4e695cf58987
+              name: 'Optical Module Interface {#IFNAME}: Vendor Name'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.24.{#SNMPINDEX}'
+              key: 'hwEntityOpticalVenderName[{#SNMPINDEX}]'
+              delay: 1h
+              history: 30d
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              value_type: CHAR
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      function hex_to_ascii(str1)
+                       {
+                          var hex  = str1.toString().replace(/\n/g,"").replace(/ /g,"");
+                          var str = '';
+                          for (var n = 0; n < hex.length; n += 2) {
+                              str += String.fromCharCode(parseInt(hex.substr(n, 2), 16)).replace(/\u0000/g,"");
+                          }
+                          return str;
+                       }
+                      if (value !== undefined){
+                          value=hex_to_ascii(value)
+                      }
+                      return value
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 8d9ad565523343c2ae43190b864212ad
+              name: 'Optical Module Interface {#IFNAME}: Type'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.25.{#SNMPINDEX}'
+              key: 'hwEntityOpticalVenderPn[{#SNMPINDEX}]'
+              delay: 1h
+              history: 30d
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              value_type: CHAR
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      function hex_to_ascii(str1)
+                       {
+                          var hex  = str1.toString().replace(/\n/g,"").replace(/ /g,"");
+                          var str = '';
+                          for (var n = 0; n < hex.length; n += 2) {
+                              str += String.fromCharCode(parseInt(hex.substr(n, 2), 16)).replace(/\u0000/g,"");
+                          }
+                          return str;
+                       }
+                      if (value !== undefined){
+                          value=hex_to_ascii(value)
+                      }
+                      return value
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  val=JSON.parse(value)
+                  temp = []
+                  for (i = 0; i<val.length; i++) {
+                   if (val[i]["{#IFPRESENT}"] !== undefined){
+                    temp.push(val[i])
+                   }
+                  }
+                  
+                  for (j = 0; j<temp.length; j++) {
+                   for (k = 0; k<val.length; k++) {
+                    if (temp[j]["{#IFNAME}"] == val[k]["{#IFNAME2}"]){
+                     temp[j]["{#IFALIAS}"]=val[k]["{#IFALIAS}"]
+                    }
+                   } 
+                  }
+                  return JSON.stringify(temp)
+      macros:
+        - macro: '{$OPT_MOD_TEMP_CRIT}'
+          value: '90'
+        - macro: '{$OPT_MOD_TEMP_WARN}'
+          value: '85'
+    - uuid: f2a3f08dc8d0467caaef42101082748e
+      template: 'Optical Modules Huawei NE'
+      name: 'Optical Modules Huawei NE'
+      description: |
+        ## Overview
+        
+        Template with single lane discovery and multi lane devices.
+        
+        
+          
+        Créditos à https://github.com/GustavoIFelippe
+        
+        
+        
+        ## Author
+        
+        gustavo10telecom
+      groups:
+        - name: Templates/Modules
+        - name: 'Templates Huawei'
+      items:
+        - uuid: af24c5cf47164c14b1961c8bcb4c28e5
+          name: 'Network Optical Modules'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#IFNAME},.1.3.6.1.2.1.47.1.1.1.1.7,{#IFVOLTAGE},1.3.6.1.4.1.2011.5.25.31.1.1.3.1.6,{#IFOPER},.1.3.6.1.4.1.2011.5.25.31.1.1.1.1.2,{#IFALIAS},1.3.6.1.2.1.31.1.1.1.18,{#IFNAME2},1.3.6.1.2.1.31.1.1.1.1]'
+          key: net.optical.discovery
+          delay: 6h
+          history: '0'
+          trends: '0'
+          value_type: TEXT
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  val=JSON.parse(value)
+                  temp = []
+                  for (i = 0; i<val.length; i++) {
+                   if (val[i]["{#IFVOLTAGE}"] !== undefined){
+                    temp.push(val[i])
+                   }
+                  }
+                  
+                  for (j = 0; j<temp.length; j++) {
+                   for (k = 0; k<val.length; k++) {
+                    if (temp[j]["{#IFNAME}"] == val[k]["{#IFNAME2}"]){
+                     temp[j]["{#IFALIAS}"]=val[k]["{#IFALIAS}"]
+                    }
+                   } 
+                  }
+                  return JSON.stringify(temp)
+      discovery_rules:
+        - uuid: 6a872c92f685422e9f2c61a5747af3ac
+          name: 'Network Optical Modules Multi Lane'
+          type: DEPENDENT
+          key: net.optical.ml.discovery
+          delay: '0'
+          filter:
+            conditions:
+              - macro: '{#IFALIAS}'
+                value: '@Link between our network'
+                formulaid: A
+              - macro: '{#IFNAME}'
+                value: 40GE
+                formulaid: B
+              - macro: '{#IFNAME}'
+                value: 100GE
+                formulaid: C
+              - macro: '{#IFOPER}'
+                value: '15'
+                formulaid: D
+              - macro: '{#IFOPER}'
+                value: '16'
+                formulaid: E
+              - macro: '{#IFVOLTAGE}'
+                value: '-1'
+                operator: NOT_MATCHES_REGEX
+                formulaid: F
+          item_prototypes:
+            - uuid: cfdf0df9e1ce45cfb9ef11b388bac2c9
+              name: 'Optical Module Interface {#IFNAME} {#IFALIAS}: Rx Power Lane 0'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.4.1.2011.5.25.31.1.1.3.1.32.{#SNMPINDEX}'
+              key: 'hwEntityOpticalLaneRxPowerMLLane0[{#SNMPINDEX}]'
+              delay: 5m
+              history: 10d
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: REGEX
+                  parameters:
+                    - '([^\,\s]*),([^\,\s]*),([^,\s]*),([^,\s]*)'
+                    - \1
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 77c9758f6c14415ebe7c2fa4c345d710
+              name: 'Optical Module Interface {#IFNAME} {#IFALIAS}: Rx Power Lane 1'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.4.1.2011.5.25.31.1.1.3.1.32.{#SNMPINDEX}'
+              key: 'hwEntityOpticalLaneRxPowerMLLane1[{#SNMPINDEX}]'
+              delay: 5m
+              history: 10d
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: REGEX
+                  parameters:
+                    - '([^\,\s]*),([^\,\s]*),([^,\s]*),([^,\s]*)'
+                    - \2
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 434b1314747e459b8bc0b8ea92586456
+              name: 'Optical Module Interface {#IFNAME} {#IFALIAS}: Rx Power Lane 2'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.4.1.2011.5.25.31.1.1.3.1.32.{#SNMPINDEX}'
+              key: 'hwEntityOpticalLaneRxPowerMLLane2[{#SNMPINDEX}]'
+              delay: 5m
+              history: 10d
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: REGEX
+                  parameters:
+                    - '([^\,\s]*),([^\,\s]*),([^,\s]*),([^,\s]*)'
+                    - \3
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: e20e29b9049746e9909967ca9949d32b
+              name: 'Optical Module Interface {#IFNAME} {#IFALIAS}: Rx Power Lane 3'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.4.1.2011.5.25.31.1.1.3.1.32.{#SNMPINDEX}'
+              key: 'hwEntityOpticalLaneRxPowerMLLane3[{#SNMPINDEX}]'
+              delay: 5m
+              history: 10d
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: REGEX
+                  parameters:
+                    - '([^\,\s]*),([^\,\s]*),([^,\s]*),([^,\s]*)'
+                    - \4
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 74a2b5d673b144f180eed2497454ffdf
+              name: 'Optical Module Interface {#IFNAME} {#IFALIAS}: Tx Power Lane 0'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.4.1.2011.5.25.31.1.1.3.1.33.{#SNMPINDEX}'
+              key: 'hwEntityOpticalLaneTxPowerMLLane0[{#SNMPINDEX}]'
+              delay: 5m
+              history: 10d
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: REGEX
+                  parameters:
+                    - '([^\,\s]*),([^\,\s]*),([^,\s]*),([^,\s]*)'
+                    - \1
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 1aea8f9419e246d3a6a398ff1cbbef8c
+              name: 'Optical Module Interface {#IFNAME} {#IFALIAS}: Tx Power Lane 1'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.4.1.2011.5.25.31.1.1.3.1.33.{#SNMPINDEX}'
+              key: 'hwEntityOpticalLaneTxPowerMLLane1[{#SNMPINDEX}]'
+              delay: 5m
+              history: 10d
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: REGEX
+                  parameters:
+                    - '([^\,\s]*),([^\,\s]*),([^,\s]*),([^,\s]*)'
+                    - \2
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 11325847b113424e876fa704dc336d73
+              name: 'Optical Module Interface {#IFNAME} {#IFALIAS}: Tx Power Lane 2'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.4.1.2011.5.25.31.1.1.3.1.33.{#SNMPINDEX}'
+              key: 'hwEntityOpticalLaneTxPowerMLLane2[{#SNMPINDEX}]'
+              delay: 5m
+              history: 10d
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: REGEX
+                  parameters:
+                    - '([^\,\s]*),([^\,\s]*),([^,\s]*),([^,\s]*)'
+                    - \3
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 9a5e4565565d4d4db496ede4f203a30c
+              name: 'Optical Module Interface {#IFNAME} {#IFALIAS}: Tx Power Lane3'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.4.1.2011.5.25.31.1.1.3.1.33.{#SNMPINDEX}'
+              key: 'hwEntityOpticalLaneTxPowerMLLane3[{#SNMPINDEX}]'
+              delay: 5m
+              history: 10d
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: REGEX
+                  parameters:
+                    - '([^\,\s]*),([^\,\s]*),([^,\s]*),([^,\s]*)'
+                    - \4
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 103a6ed8bdf54b2990f33720f7e00794
+              name: 'Optical Module Interface {#ENTPHYSICALNAME}: Rx Power High Threshold'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.14.{#SNMPINDEX}'
+              key: 'hwEntityOpticalRxHighThresholdML[{#ENTPHYSICALNAME}]'
+              delay: 1d
+              history: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: de62a3ea64594f8fb5f45cbb5dde1508
+              name: 'Optical Module Interface {#ENTPHYSICALNAME}: Rx Power Low Threshold'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.13.{#SNMPINDEX}'
+              key: 'hwEntityOpticalRxLowThresholdML[{#ENTPHYSICALNAME}]'
+              delay: 1d
+              history: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 39313c7b74de4bee972c34008d56baf7
+              name: 'Optical Module Interface {#IFNAME} {#IFALIAS}: Temperature'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.5.{#SNMPINDEX}'
+              key: 'hwEntityOpticalTemperatureML[{#SNMPINDEX}]'
+              delay: 10m
+              history: 10d
+              value_type: FLOAT
+              units: ºC
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 2fb84e89d9f046ae95175a4bac93814d
+              name: 'Optical Module Interface {#ENTPHYSICALNAME}: Tx Power High Threshold'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.16.{#SNMPINDEX}'
+              key: 'hwEntityOpticalTxHighThresholdML[{#ENTPHYSICALNAME}]'
+              delay: 1d
+              history: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 615bcd5b11fb4fa0874434e48b30a156
+              name: 'Optical Module Interface {#ENTPHYSICALNAME}: Tx Power Low Threshold'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.15.{#SNMPINDEX}'
+              key: 'hwEntityOpticalTxLowThresholdML[{#ENTPHYSICALNAME}]'
+              delay: 1d
+              history: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 79e85e85c6f3417b9debf4d9dcf44b5e
+              name: 'Optical Module Interface {#IFNAME} {#IFALIAS}: Vendor Name'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.24.{#SNMPINDEX}'
+              key: 'hwEntityOpticalVenderNameML[{#SNMPINDEX}]'
+              delay: 1d
+              history: 30d
+              trends: '0'
+              value_type: TEXT
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 5208c9d03f1f4b7684738deee53428c8
+              name: 'Optical Module Interface {#IFNAME} {#IFALIAS}: Type'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.25.{#SNMPINDEX}'
+              key: 'hwEntityOpticalVenderPnML[{#SNMPINDEX}]'
+              delay: 1d
+              history: 30d
+              trends: '0'
+              value_type: TEXT
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+          master_item:
+            key: net.optical.discovery
+        - uuid: 8dbcf5213958457aa4eeb4e74a7a23cd
+          name: 'Network Optical Modules Single Lane'
+          type: DEPENDENT
+          key: net.optical.sl.discovery
+          delay: '0'
+          filter:
+            conditions:
+              - macro: '{#IFALIAS}'
+                value: '@Link between our network'
+                formulaid: A
+              - macro: '{#IFNAME}'
+                value: Gigabit
+                formulaid: B
+              - macro: '{#IFNAME}'
+                value: XGigabit
+                formulaid: C
+              - macro: '{#IFOPER}'
+                value: '15'
+                formulaid: D
+              - macro: '{#IFOPER}'
+                value: '16'
+                formulaid: E
+              - macro: '{#IFVOLTAGE}'
+                value: '-1'
+                operator: NOT_MATCHES_REGEX
+                formulaid: F
+          item_prototypes:
+            - uuid: a3256d78d55a4d899563b531d251d728
+              name: 'Optical Module Interface {#IFNAME} {#IFALIAS}: RxPower'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.4.1.2011.5.25.31.1.1.3.1.32.{#SNMPINDEX}'
+              key: 'hwEntityOpticalLaneRxPower[{#SNMPINDEX}]'
+              delay: 5m
+              history: 10d
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 0de2f47b767e498396983b7ab8606cce
+              name: 'Optical Module Interface {#IFNAME} {#IFALIAS}: TxPower'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.4.1.2011.5.25.31.1.1.3.1.33.{#SNMPINDEX}'
+              key: 'hwEntityOpticalLaneTxPower[{#SNMPINDEX}]'
+              delay: 5m
+              history: 10d
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: f0eff47b19c84f25b80d44e636247f98
+              name: 'Optical Module Interface {#ENTPHYSICALNAME}: RxPower High Threshold'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.14.{#SNMPINDEX}'
+              key: 'hwEntityOpticalRxHighThreshold[{#ENTPHYSICALNAME}]'
+              delay: 1d
+              history: 10d
+              status: DISABLED
+              discover: NO_DISCOVER
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 597a27579d1643fca4cb469600bf7990
+              name: 'Optical Module Interface {#ENTPHYSICALNAME}: RxPower Low Threshold'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.13.{#SNMPINDEX}'
+              key: 'hwEntityOpticalRxLowThreshold[{#ENTPHYSICALNAME}]'
+              delay: 1d
+              history: 10d
+              status: DISABLED
+              discover: NO_DISCOVER
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 5657a1ded4774e4faf90991d76368b6a
+              name: 'Optical Module Interface {#IFNAME} {#IFALIAS}: Temperature'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.4.1.2011.5.25.31.1.1.3.1.5.{#SNMPINDEX}'
+              key: 'hwEntityOpticalTemperature[{#SNMPINDEX}]'
+              delay: 10m
+              history: 30d
+              value_type: FLOAT
+              units: °C
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 987233ac0d42422989c78d2a2d067089
+              name: 'Optical Module Interface {#ENTPHYSICALNAME}: TxPower High Threshold'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.16.{#SNMPINDEX}'
+              key: 'hwEntityOpticalTxHighThreshold[{#ENTPHYSICALNAME}]'
+              delay: 1d
+              history: 10d
+              status: DISABLED
+              discover: NO_DISCOVER
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 0f2bd4a36aba475fadda7605f6027181
+              name: 'Optical Module Interface {#ENTPHYSICALNAME}: TxPower Low Threshold'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.15.{#SNMPINDEX}'
+              key: 'hwEntityOpticalTxLowThreshold[{#ENTPHYSICALNAME}]'
+              delay: 1d
+              history: 10d
+              status: DISABLED
+              discover: NO_DISCOVER
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 9226a85570e640bfa11b9226c5fab685
+              name: 'Optical Module Interface {#IFNAME} {#IFALIAS}: Vendor Name'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.24.{#SNMPINDEX}'
+              key: 'hwEntityOpticalVenderName[{#SNMPINDEX}]'
+              delay: 1d
+              history: 30d
+              trends: '0'
+              value_type: TEXT
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 2b567c6c595c47bd87f70d6c684855d8
+              name: 'Optical Module Interface {#IFNAME} {#IFALIAS}: Type'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.25.{#SNMPINDEX}'
+              key: 'hwEntityOpticalVenderPn[{#SNMPINDEX}]'
+              delay: 1d
+              history: 30d
+              trends: '0'
+              value_type: TEXT
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+          master_item:
+            key: net.optical.discovery
+      macros:
+        - macro: '{$ATTENUATIONFACTOR}'
+          value: '-2'
+        - macro: '{$SNMP_COMMUNITY}'
+          value: dEz_sW_@ro
+        - macro: '{$TRANSCEIVER_TEMP_WARN}'
+          value: '70'
+    - uuid: 41abb132f28c4a39b9e1d9185468513e
+      template: 'Optical Modules Huawei S'
+      name: 'Optical Modules Huawei S'
+      description: 'Template for Huawei VRP Optical Modules Info'
+      groups:
+        - name: Templates
+        - name: 'Templates/Network devices'
+      discovery_rules:
+        - uuid: 6ee2782fd7ad45e095d5b5ba9fca7457
+          name: 'Network Optical Modules Info'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#IFNAME},1.3.6.1.2.1.47.1.1.1.1.7,{#IFPRESENT},.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.6,{#IFOPER},.1.3.6.1.4.1.2011.5.25.31.1.1.1.1.2,{#IFALIAS},1.3.6.1.2.1.31.1.1.1.18,{#IFNAME2},1.3.6.1.2.1.31.1.1.1.1]'
+          key: net.if.optical.discovery
+          delay: 6h
+          filter:
+            conditions:
+              - macro: '{#IFNAME}'
+                value: '@Network interfaces for discovery'
+                formulaid: A
+              - macro: '{#IFOPER}'
+                value: '3'
+                formulaid: B
+              - macro: '{#IFPRESENT}'
+                value: '0'
+                operator: NOT_MATCHES_REGEX
+                formulaid: C
+          description: 'Discovering interfaces from IF-MIB. Interfaces with down(2) Administrative Status are not discovered.'
+          item_prototypes:
+            - uuid: 40553fa5b9874d74bfa3069cd3dde6e3
+              name: 'Optical Module Interface {#IFNAME} {#IFALIAS}: RxPower'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.8.{#SNMPINDEX}'
+              key: 'hwEntityOpticalLaneRxPower[{#SNMPINDEX}]'
+              delay: 5m
+              history: 30d
+              trends: 90d
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 9e9972b176444594b69d13f56bb4ee5d
+              name: 'Optical Module Interface {#IFNAME} {#IFALIAS}:  Tx Power'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.9.{#SNMPINDEX}'
+              key: 'hwEntityOpticalLaneTxPower[{#SNMPINDEX}]'
+              delay: 5m
+              history: 30d
+              trends: 90d
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: f35ebf8b35e24a32bc185e08d059bed6
+              name: 'Optical Module Interface {#IFNAME}: RxPower High Threshold'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.14.{#SNMPINDEX}'
+              key: 'hwEntityOpticalRxHighThreshold[{#SNMPINDEX}]'
+              delay: 1d
+              history: 30d
+              trends: 90d
+              status: DISABLED
+              discover: NO_DISCOVER
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 751f4b54e8824cfb8456cb56cad1fe34
+              name: 'Optical Module Interface {#IFNAME}: RxPower Low Threshold'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.13.{#SNMPINDEX}'
+              key: 'hwEntityOpticalRxLowThreshold[{#SNMPINDEX}]'
+              delay: 1d
+              history: 30d
+              trends: 90d
+              status: DISABLED
+              discover: NO_DISCOVER
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 8c9747d5c11744e4b1e49279e5ee8c08
+              name: 'Optical Module Interface {#IFNAME} {#IFALIAS}: Temperature'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.4.1.2011.5.25.31.1.1.3.1.5.{#SNMPINDEX}'
+              key: 'hwEntityOpticalTemperature[{#SNMPINDEX}]'
+              delay: 10m
+              history: 30d
+              trends: 90d
+              units: °C
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 8d7662717d224e37a9f0065111cefedd
+              name: 'Optical Module Interface {#IFNAME}: TxPower High Threshold'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.16.{#SNMPINDEX}'
+              key: 'hwEntityOpticalTxHighThreshold[{#SNMPINDEX}]'
+              delay: 1d
+              history: 30d
+              trends: 90d
+              status: DISABLED
+              discover: NO_DISCOVER
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 9974688cb14c462d9ba088d608151d5d
+              name: 'Optical Module Interface {#IFNAME}: TxPower Low Threshold'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.15.{#SNMPINDEX}'
+              key: 'hwEntityOpticalTxLowThreshold[{#SNMPINDEX}]'
+              delay: 1d
+              history: 30d
+              trends: 90d
+              status: DISABLED
+              discover: NO_DISCOVER
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 61f3f32a7c194385b8708d110e054ecd
+              name: 'Optical Module Interface {#IFNAME}: Vendor Name'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.24.{#SNMPINDEX}'
+              key: 'hwEntityOpticalVenderName[{#SNMPINDEX}]'
+              delay: 1h
+              history: 30d
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              value_type: CHAR
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      function hex_to_ascii(str1)
+                       {
+                          var hex  = str1.toString().replace(/\n/g,"").replace(/ /g,"");
+                          var str = '';
+                          for (var n = 0; n < hex.length; n += 2) {
+                              str += String.fromCharCode(parseInt(hex.substr(n, 2), 16)).replace(/\u0000/g,"");
+                          }
+                          return str;
+                       }
+                      if (value !== undefined){
+                          value=hex_to_ascii(value)
+                      }
+                      return value
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+            - uuid: 48fc1c02950449a595f66df5efb1e795
+              name: 'Optical Module Interface {#IFNAME}: Type'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.2011.5.25.31.1.1.3.1.25.{#SNMPINDEX}'
+              key: 'hwEntityOpticalVenderPn[{#SNMPINDEX}]'
+              delay: 1h
+              history: 30d
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              value_type: CHAR
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      function hex_to_ascii(str1)
+                       {
+                          var hex  = str1.toString().replace(/\n/g,"").replace(/ /g,"");
+                          var str = '';
+                          for (var n = 0; n < hex.length; n += 2) {
+                              str += String.fromCharCode(parseInt(hex.substr(n, 2), 16)).replace(/\u0000/g,"");
+                          }
+                          return str;
+                       }
+                      if (value !== undefined){
+                          value=hex_to_ascii(value)
+                      }
+                      return value
+              tags:
+                - tag: Application
+                  value: 'Optic Interface'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  val=JSON.parse(value)
+                  temp = []
+                  for (i = 0; i<val.length; i++) {
+                   if (val[i]["{#IFPRESENT}"] !== undefined){
+                    temp.push(val[i])
+                   }
+                  }
+                  
+                  for (j = 0; j<temp.length; j++) {
+                   for (k = 0; k<val.length; k++) {
+                    if (temp[j]["{#IFNAME}"] == val[k]["{#IFNAME2}"]){
+                     temp[j]["{#IFALIAS}"]=val[k]["{#IFALIAS}"]
+                    }
+                   } 
+                  }
+                  return JSON.stringify(temp)
+      macros:
+        - macro: '{$OPT_MOD_TEMP_CRIT}'
+          value: '90'
+        - macro: '{$OPT_MOD_TEMP_WARN}'
+          value: '85'
