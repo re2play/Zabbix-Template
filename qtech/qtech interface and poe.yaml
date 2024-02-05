@@ -1,0 +1,755 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 57b7ae836ca64446ba2c296389c009b7
+      name: Templates/Modules
+  templates:
+    - uuid: e67c069c95db44ea86beb20705dc24ee
+      template: 'Template Module True Interfaces SNMPv2 Qtech'
+      name: 'Template Module True Interfaces SNMPv2 Qtech'
+      description: |
+        Template Interfaces version: 0.14
+        MIBs used:
+        IF-MIB
+      groups:
+        - name: Templates/Modules
+      items:
+        - uuid: 9cb8881b504443fd923d74806d6fc1d9
+          name: 'Network Interface Discovery'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#IFADMINSTATUS},1.3.6.1.2.1.2.2.1.7,{#IFALIAS},1.3.6.1.2.1.31.1.1.1.18,{#IFNAME},1.3.6.1.2.1.31.1.1.1.1,{#POESTATUS},.1.3.6.1.4.1.27514.100.26.10.1.2]'
+          key: net.if.discovery
+          delay: 1h
+          history: '0'
+          trends: '0'
+          value_type: TEXT
+      discovery_rules:
+        - uuid: 5a84dd4b05d34c68b70b94a4ed508567
+          name: 'Network Interfaces'
+          type: DEPENDENT
+          key: net.if
+          delay: '0'
+          filter:
+            conditions:
+              - macro: '{#IFADMINSTATUS}'
+                value: '1'
+                formulaid: A
+              - macro: '{#IFALIAS}'
+                value: \w+
+                formulaid: B
+              - macro: '{#IFNAME}'
+                value: '@Network interfaces for discovery'
+                formulaid: C
+          description: 'Discovering interfaces from IF-MIB. Interfaces with down(2) Administrative Status are not discovered.'
+          item_prototypes:
+            - uuid: 198e4284068c4babac2bc7d25452b9c3
+              name: 'Interface {#IFNAME}({#IFALIAS}): FSC Error'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.10.7.2.1.3.{#SNMPINDEX}'
+              key: 'net.if.fscError[{#SNMPINDEX}]'
+              delay: 5m
+              history: 1w
+              trends: 1d
+              value_type: FLOAT
+              units: error
+              description: |
+                MIB: IF-MIB
+                An estimate of the interface's current bandwidth in units of 1,000,000 bits per second.  If this object reports a value of `n' then the speed of the interface is somewhere in the range of `n-500,000' to`n+499,999'.  For interfaces which do not vary in bandwidth or for those where no accurate estimation can be made, this object should contain the nominal bandwidth.  For a sub-layer which has no concept of bandwidth, this object should be zero.
+              preprocessing:
+                - type: SIMPLE_CHANGE
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+              trigger_prototypes:
+                - uuid: a5d0ded0bbba47eb9ba8c2eea7b31d4a
+                  expression: 'last(/Template Module True Interfaces SNMPv2 Qtech/net.if.fscError[{#SNMPINDEX}],#1)>{$IF_FSC_ERRORS_THOLD:"{#IFNAME}"} and last(/Template Module True Interfaces SNMPv2 Qtech/net.if.fscError[{#SNMPINDEX}],#2)>{$IF_FSC_ERRORS_THOLD:"{#IFNAME}"}'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'last(/Template Module True Interfaces SNMPv2 Qtech/net.if.fscError[{#SNMPINDEX}],#1)<{$IF_FSC_ERRORS_THOLD:"{#IFNAME}"} and last(/Template Module True Interfaces SNMPv2 Qtech/net.if.fscError[{#SNMPINDEX}],#2)<{$IF_FSC_ERRORS_THOLD:"{#IFNAME}"} and last(/Template Module True Interfaces SNMPv2 Qtech/net.if.fscError[{#SNMPINDEX}],#3)<{$IF_FSC_ERRORS_THOLD:"{#IFNAME}"} and last(/Template Module True Interfaces SNMPv2 Qtech/net.if.fscError[{#SNMPINDEX}],#4)<{$IF_FSC_ERRORS_THOLD:"{#IFNAME}"} and last(/Template Module True Interfaces SNMPv2 Qtech/net.if.fscError[{#SNMPINDEX}],#5)<{$IF_FSC_ERRORS_THOLD:"{#IFNAME}"}'
+                  name: 'Interface {#IFNAME}({#IFALIAS}): Увеличение количества FSC(CRC) ошибок'
+                  priority: WARNING
+                  description: 'Increase FCS(CRC) error value: {ITEM.LASTVALUE1}'
+                  dependencies:
+                    - name: 'Interface {#IFNAME}({#IFALIAS}): Увеличение количества FSC(CRC) ошибок (> {$IF_FSC_ERRORS_ALERT})'
+                      expression: 'last(/Template Module True Interfaces SNMPv2 Qtech/net.if.fscError[{#SNMPINDEX}])>{$IF_FSC_ERRORS_ALERT:"{#IFNAME}"}'
+                      recovery_expression: 'last(/Template Module True Interfaces SNMPv2 Qtech/net.if.fscError[{#SNMPINDEX}])<{$IF_FSC_ERRORS_ALERT:"{#IFNAME}"}*0.5'
+                - uuid: 1af37d44fca94483abb3445739a82a5a
+                  expression: 'last(/Template Module True Interfaces SNMPv2 Qtech/net.if.fscError[{#SNMPINDEX}])>{$IF_FSC_ERRORS_ALERT:"{#IFNAME}"}'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'last(/Template Module True Interfaces SNMPv2 Qtech/net.if.fscError[{#SNMPINDEX}])<{$IF_FSC_ERRORS_ALERT:"{#IFNAME}"}*0.5'
+                  name: 'Interface {#IFNAME}({#IFALIAS}): Увеличение количества FSC(CRC) ошибок (> {$IF_FSC_ERRORS_ALERT})'
+                  priority: HIGH
+                  description: 'Increase FCS(CRC) error value: {ITEM.LASTVALUE1}'
+            - uuid: ab21d68f2247424996e359e78721de24
+              name: 'Interface {#IFNAME}({#IFALIAS}): Inbound packets discarded'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.2.2.1.13.{#SNMPINDEX}'
+              key: 'net.if.in.discards[ifInDiscards.{#SNMPINDEX}]'
+              delay: 5m
+              history: 1w
+              units: pps
+              description: |
+                MIB: IF-MIB
+                The number of inbound packets which were chosen to be discarded
+                even though no errors had been detected to prevent their being deliverable to a higher-layer protocol.
+                One possible reason for discarding such a packet could be to free up buffer space.
+                Discontinuities in the value of this counter can occur at re-initialization of the management system,
+                and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: 8f923c9771ed410abee7c28d22959f49
+              name: 'Interface {#IFNAME}({#IFALIAS}): Inbound packets with errors'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.2.2.1.14.{#SNMPINDEX}'
+              key: 'net.if.in.errors[ifInErrors.{#SNMPINDEX}]'
+              delay: 5m
+              history: 1w
+              units: pps
+              description: |
+                MIB: IF-MIB
+                For packet-oriented interfaces, the number of inbound packets that contained errors preventing them from being deliverable to a higher-layer protocol.  For character-oriented or fixed-length interfaces, the number of inbound transmission units that contained errors preventing them from being deliverable to a higher-layer protocol. Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: 8a0cc7aef7a94688b8efdbbb53dce861
+              name: 'Interface {#IFNAME}({#IFALIAS}): input BroadcastPkts'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.31.1.1.1.9.{#SNMPINDEX}'
+              key: 'net.if.in[ifHCInBroadcastPkts.{#SNMPINDEX}]'
+              delay: 5m
+              history: 30d
+              units: pps
+              description: |
+                MIB: IF-MIB
+                The total number of octets received on the interface,including framing characters.  This object is a 64-bit version of ifInOctets. Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: c8bccca8b64947089d3ce38fbdc8833f
+              name: 'Interface {#IFNAME}({#IFALIAS}): input MulticastPkts'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.31.1.1.1.8.{#SNMPINDEX}'
+              key: 'net.if.in[ifHCInMulticastPkts.{#SNMPINDEX}]'
+              delay: 5m
+              history: 30d
+              units: pps
+              description: |
+                MIB: IF-MIB
+                The total number of octets received on the interface,including framing characters.  This object is a 64-bit version of ifInOctets. Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: 383d44940c1c438892e4049046332477
+              name: 'Interface {#IFNAME}({#IFALIAS}): Bits received'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.31.1.1.1.6.{#SNMPINDEX}'
+              key: 'net.if.in[ifHCInOctets.{#SNMPINDEX}]'
+              delay: 5m
+              history: 30d
+              units: bps
+              description: |
+                MIB: IF-MIB
+                The total number of octets received on the interface,including framing characters.  This object is a 64-bit version of ifInOctets. Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: db7d26bfb42d408cad77400849ad06f8
+              name: 'Interface {#IFNAME}({#IFALIAS}): input UnicastPkts'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.11.{#SNMPINDEX}'
+              key: 'net.if.in[ifInUnicastPkts.{#SNMPINDEX}]'
+              delay: 5m
+              history: 30d
+              units: pps
+              description: |
+                MIB: IF-MIB
+                The total number of octets received on the interface,including framing characters.  This object is a 64-bit version of ifInOctets. Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: 4ae9f7fce4b24270a047a061b13b3019
+              name: 'Interface {#IFNAME}({#IFALIAS}): Outbound packets discarded'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.2.2.1.19.{#SNMPINDEX}'
+              key: 'net.if.out.discards[ifOutDiscards.{#SNMPINDEX}]'
+              delay: 5m
+              history: 1w
+              units: pps
+              description: |
+                MIB: IF-MIB
+                The number of outbound packets which were chosen to be discarded
+                even though no errors had been detected to prevent their being deliverable to a higher-layer protocol.
+                One possible reason for discarding such a packet could be to free up buffer space.
+                Discontinuities in the value of this counter can occur at re-initialization of the management system,
+                and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: fb23bee26a874366b1d79cb2b257fb22
+              name: 'Interface {#IFNAME}({#IFALIAS}): Outbound packets with errors'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.2.2.1.20.{#SNMPINDEX}'
+              key: 'net.if.out.errors[ifOutErrors.{#SNMPINDEX}]'
+              delay: 5m
+              history: 1w
+              units: pps
+              description: |
+                MIB: IF-MIB
+                For packet-oriented interfaces, the number of outbound packets that contained errors preventing them from being deliverable to a higher-layer protocol.  For character-oriented or fixed-length interfaces, the number of outbound transmission units that contained errors preventing them from being deliverable to a higher-layer protocol. Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: 70b20457b8b6497b9733bf2d69e37efd
+              name: 'Interface {#IFNAME}({#IFALIAS}): output BroadcastPkts'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.31.1.1.1.13.{#SNMPINDEX}'
+              key: 'net.if.out[ifHCOutBroadcastPkts.{#SNMPINDEX}]'
+              delay: 5m
+              history: 30d
+              units: pps
+              description: |
+                MIB: IF-MIB
+                The total number of octets received on the interface,including framing characters.  This object is a 64-bit version of ifInOctets. Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: c91b0a398bf84f51b3c9c910888d5b0a
+              name: 'Interface {#IFNAME}({#IFALIAS}): output MulticastPkts'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.31.1.1.1.12.{#SNMPINDEX}'
+              key: 'net.if.out[ifHCOutMulticastPkts.{#SNMPINDEX}]'
+              delay: 5m
+              history: 30d
+              status: DISABLED
+              units: pps
+              description: |
+                MIB: IF-MIB
+                The total number of octets received on the interface,including framing characters.  This object is a 64-bit version of ifInOctets. Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: eca8bf5e7fea400298070341aadbf06f
+              name: 'Interface {#IFNAME}({#IFALIAS}): Bits sent'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.31.1.1.1.10.{#SNMPINDEX}'
+              key: 'net.if.out[ifHCOutOctets.{#SNMPINDEX}]'
+              delay: 5m
+              history: 30d
+              units: bps
+              description: |
+                MIB: IF-MIB
+                The total number of octets transmitted out of the interface, including framing characters.  This object is a 64-bit version of ifOutOctets.Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: 2c38d682579e4b66bbbe7b6ce2a868f0
+              name: 'Interface {#IFNAME}({#IFALIAS}): output UnicastPkts'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.17.{#SNMPINDEX}'
+              key: 'net.if.out[ifOutUnicastPkts.{#SNMPINDEX}]'
+              delay: 5m
+              history: 30d
+              units: pps
+              description: |
+                MIB: IF-MIB
+                The total number of octets received on the interface,including framing characters.  This object is a 64-bit version of ifInOctets. Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: 53e59151b1f54332a586c12805808436
+              name: 'Interface {#IFNAME}({#IFALIAS}): HighSpeed'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.31.1.1.1.15.{#SNMPINDEX}'
+              key: 'net.if.speed[ifHighSpeed.{#SNMPINDEX}]'
+              delay: 10m
+              history: 1w
+              trends: 1d
+              units: bps
+              description: |
+                MIB: IF-MIB
+                An estimate of the interface's current bandwidth in units of 1,000,000 bits per second.  If this object reports a value of `n' then the speed of the interface is somewhere in the range of `n-500,000' to`n+499,999'.  For interfaces which do not vary in bandwidth or for those where no accurate estimation can be made, this object should contain the nominal bandwidth.  For a sub-layer which has no concept of bandwidth, this object should be zero.
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '1000000'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 300s
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: 8dcf0ff8294f4e6aa8b64a94e8ffa8c0
+              name: 'Interface {#IFNAME}({#IFALIAS}): Admin status'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.2.2.1.7.{#SNMPINDEX}'
+              key: 'net.if.status[ifAdminStatus.{#SNMPINDEX}]'
+              history: 14d
+              trends: 1d
+              description: |
+                MIB: IF-MIB
+                The current operational state of the interface.
+                - The testing(3) state indicates that no operational packet scan be passed
+                - If ifAdminStatus is down(2) then ifOperStatus should be down(2)
+                - If ifAdminStatus is changed to up(1) then ifOperStatus should change to up(1) if the interface is ready to transmit and receive network traffic
+                - It should change todormant(5) if the interface is waiting for external actions (such as a serial line waiting for an incoming connection)
+                - It should remain in the down(2) state if and only if there is a fault that prevents it from going to the up(1) state
+                - It should remain in the notPresent(6) state if the interface has missing(typically, hardware) components.
+              valuemap:
+                name: 'IF-MIB::ifOperStatus'
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 120s
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: 2ee1345b0d944867b1a5a72bd4a1ecd9
+              name: 'Interface {#IFNAME}({#IFALIAS}): Operational status'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.2.2.1.8.{#SNMPINDEX}'
+              key: 'net.if.status[ifOperStatus.{#SNMPINDEX}]'
+              history: 14d
+              trends: 1d
+              description: |
+                MIB: IF-MIB
+                The current operational state of the interface.
+                - The testing(3) state indicates that no operational packet scan be passed
+                - If ifAdminStatus is down(2) then ifOperStatus should be down(2)
+                - If ifAdminStatus is changed to up(1) then ifOperStatus should change to up(1) if the interface is ready to transmit and receive network traffic
+                - It should change todormant(5) if the interface is waiting for external actions (such as a serial line waiting for an incoming connection)
+                - It should remain in the down(2) state if and only if there is a fault that prevents it from going to the up(1) state
+                - It should remain in the notPresent(6) state if the interface has missing(typically, hardware) components.
+              valuemap:
+                name: 'IF-MIB::ifOperStatus'
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 120s
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+            - uuid: 029454431a5941e79e0ff05680f54e8b
+              name: 'Interface {#IFNAME}({#IFALIAS}): Description'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.31.1.1.1.18.{#SNMPINDEX}'
+              key: 'net.if[ifAlias.{#SNMPINDEX}]'
+              delay: 10m
+              history: 1h
+              trends: '0'
+              value_type: TEXT
+              description: |
+                MIB: IF-MIB
+                This object is an 'alias' name for the interface as specified by a network manager, and provides a non-volatile 'handle' for the interface. On the first instantiation of an interface, the value of ifAlias associated with that interface is the zero-length string. As and when a value is written into an instance of ifAlias through a network management set operation, then the agent must retain the supplied value in the ifAlias instance associated with the same interface for as long as that interface remains instantiated, including across all re- initializations/reboots of the network management system, including those which result in a change of the interface's ifIndex value.
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 120s
+              tags:
+                - tag: Application
+                  value: 'Network Interfaces'
+          trigger_prototypes:
+            - uuid: 3302d05f7b1d4cc4ab53bfdca337d497
+              expression: 'find(/Template Module True Interfaces SNMPv2 Qtech/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_BCAST")=0 and last(/Template Module True Interfaces SNMPv2 Qtech/net.if.in[ifHCInBroadcastPkts.{#SNMPINDEX}],#1)>{$BCAST_LIMIT:"{{#IFNAME}.regsub(ae, ifvirtual)}"} and last(/Template Module True Interfaces SNMPv2 Qtech/net.if.in[ifHCInBroadcastPkts.{#SNMPINDEX}],#2)>{$BCAST_LIMIT:"{{#IFNAME}.regsub(ae, ifvirtual)}"} and last(/Template Module True Interfaces SNMPv2 Qtech/net.if.in[ifHCInBroadcastPkts.{#SNMPINDEX}],#3)>{$BCAST_LIMIT:"{{#IFNAME}.regsub(ae, ifvirtual)}"}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'find(/Template Module True Interfaces SNMPv2 Qtech/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_BCAST")=1 or (last(/Template Module True Interfaces SNMPv2 Qtech/net.if.in[ifHCInBroadcastPkts.{#SNMPINDEX}],#1)<{$BCAST_PER_LIMIT_RECOVERY}*{$BCAST_LIMIT:"{{#IFNAME}.regsub(ae, ifvirtual)}"} and last(/Template Module True Interfaces SNMPv2 Qtech/net.if.in[ifHCInBroadcastPkts.{#SNMPINDEX}],#2)<{$BCAST_PER_LIMIT_RECOVERY}*{$BCAST_LIMIT:"{{#IFNAME}.regsub(ae, ifvirtual)}"})'
+              name: 'Interface {#IFNAME}({#IFALIAS}): broadcast traffic > {$BCAST_LIMIT:"{{#IFNAME}.regsub(ae, ifvirtual)}"} pps.'
+              priority: AVERAGE
+              description: 'Broadcast: Input {ITEM.LASTVALUE2}'
+            - uuid: 113a263a85f34096a731140f58306c86
+              expression: 'last(/Template Module True Interfaces SNMPv2 Qtech/net.if.status[ifAdminStatus.{#SNMPINDEX}])=1 and find(/Template Module True Interfaces SNMPv2 Qtech/net.if[ifAlias.{#SNMPINDEX}],,"regexp","^FREE$")=1'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'last(/Template Module True Interfaces SNMPv2 Qtech/net.if.status[ifAdminStatus.{#SNMPINDEX}])=2 or find(/Template Module True Interfaces SNMPv2 Qtech/net.if[ifAlias.{#SNMPINDEX}],,"regexp","^FREE$")=0'
+              name: 'Interface {#IFNAME}({#IFALIAS}): FREE interface Admin status UP'
+              priority: INFO
+              description: |
+                Last value: {ITEM.LASTVALUE1}.
+                Interface is down
+            - uuid: c181b54164ce4d2d9a3a548e31119cb3
+              expression: |
+                ((last(/Template Module True Interfaces SNMPv2 Qtech/net.if.in[ifHCInOctets.{#SNMPINDEX}],#1)>({$IF_UTIL_INFO:"{#IFNAME}"}/100)*last(/Template Module True Interfaces SNMPv2 Qtech/net.if.speed[ifHighSpeed.{#SNMPINDEX}],#1) and last(/Template Module True Interfaces SNMPv2 Qtech/net.if.in[ifHCInOctets.{#SNMPINDEX}],#2)>({$IF_UTIL_INFO:"{#IFNAME}"}/100)*last(/Template Module True Interfaces SNMPv2 Qtech/net.if.speed[ifHighSpeed.{#SNMPINDEX}],#2)) or
+                (last(/Template Module True Interfaces SNMPv2 Qtech/net.if.out[ifHCOutOctets.{#SNMPINDEX}],#1)>({$IF_UTIL_INFO:"{#IFNAME}"}/100)*last(/Template Module True Interfaces SNMPv2 Qtech/net.if.speed[ifHighSpeed.{#SNMPINDEX}],#1) and last(/Template Module True Interfaces SNMPv2 Qtech/net.if.out[ifHCOutOctets.{#SNMPINDEX}],#2)>({$IF_UTIL_INFO:"{#IFNAME}"}/100)*last(/Template Module True Interfaces SNMPv2 Qtech/net.if.speed[ifHighSpeed.{#SNMPINDEX}],#2))) and
+                last(/Template Module True Interfaces SNMPv2 Qtech/net.if.speed[ifHighSpeed.{#SNMPINDEX}])>0 and find(/Template Module True Interfaces SNMPv2 Qtech/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_CORE|_PROBE")=0
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: |
+                (last(/Template Module True Interfaces SNMPv2 Qtech/net.if.in[ifHCInOctets.{#SNMPINDEX}],#1)<(({$IF_UTIL_INFO:"{#IFNAME}"}-3)/100)*last(/Template Module True Interfaces SNMPv2 Qtech/net.if.speed[ifHighSpeed.{#SNMPINDEX}],#1) and last(/Template Module True Interfaces SNMPv2 Qtech/net.if.in[ifHCInOctets.{#SNMPINDEX}],#2)<(({$IF_UTIL_INFO:"{#IFNAME}"}-3)/100)*last(/Template Module True Interfaces SNMPv2 Qtech/net.if.speed[ifHighSpeed.{#SNMPINDEX}],#2) and
+                last(/Template Module True Interfaces SNMPv2 Qtech/net.if.out[ifHCOutOctets.{#SNMPINDEX}],#1)<(({$IF_UTIL_INFO:"{#IFNAME}"}-3)/100)*last(/Template Module True Interfaces SNMPv2 Qtech/net.if.speed[ifHighSpeed.{#SNMPINDEX}],#1) and last(/Template Module True Interfaces SNMPv2 Qtech/net.if.out[ifHCOutOctets.{#SNMPINDEX}],#2)<(({$IF_UTIL_INFO:"{#IFNAME}"}-3)/100)*last(/Template Module True Interfaces SNMPv2 Qtech/net.if.speed[ifHighSpeed.{#SNMPINDEX}],#2)) or find(/Template Module True Interfaces SNMPv2 Qtech/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_CORE|_PROBE")=1
+              name: 'Interface {#IFNAME}({#IFALIAS}): High bandwidth usage > {$IF_UTIL_INFO:"{#IFNAME}"}%.'
+              priority: WARNING
+              description: |
+                Input last value: {ITEM.LASTVALUE1},
+                Output las tvalue: {ITEM.LASTVALUE3}.
+              dependencies:
+                - name: 'Interface {#IFNAME}({#IFALIAS}): High bandwidth usage > {$IF_UTIL_MAX:"{#IFNAME}"}%.'
+                  expression: |
+                    (avg(/Template Module True Interfaces SNMPv2 Qtech/net.if.in[ifHCInOctets.{#SNMPINDEX}],5m)>({$IF_UTIL_MAX:"{#IFNAME}"}/100)*last(/Template Module True Interfaces SNMPv2 Qtech/net.if.speed[ifHighSpeed.{#SNMPINDEX}]) or
+                    avg(/Template Module True Interfaces SNMPv2 Qtech/net.if.out[ifHCOutOctets.{#SNMPINDEX}],5m)>({$IF_UTIL_MAX:"{#IFNAME}"}/100)*last(/Template Module True Interfaces SNMPv2 Qtech/net.if.speed[ifHighSpeed.{#SNMPINDEX}])) and
+                    last(/Template Module True Interfaces SNMPv2 Qtech/net.if.speed[ifHighSpeed.{#SNMPINDEX}])>0 and find(/Template Module True Interfaces SNMPv2 Qtech/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_PROBE")=0
+                  recovery_expression: |
+                    (avg(/Template Module True Interfaces SNMPv2 Qtech/net.if.in[ifHCInOctets.{#SNMPINDEX}],5m)<=(({$IF_UTIL_MAX:"{#IFNAME}"}-3)/100)*last(/Template Module True Interfaces SNMPv2 Qtech/net.if.speed[ifHighSpeed.{#SNMPINDEX}]) and
+                    avg(/Template Module True Interfaces SNMPv2 Qtech/net.if.out[ifHCOutOctets.{#SNMPINDEX}],5m)<=(({$IF_UTIL_MAX:"{#IFNAME}"}-3)/100)*last(/Template Module True Interfaces SNMPv2 Qtech/net.if.speed[ifHighSpeed.{#SNMPINDEX}])) or 
+                    find(/Template Module True Interfaces SNMPv2 Qtech/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_PROBE")=1
+            - uuid: fea05b5b658846649ff0a7bf6ae184ef
+              expression: |
+                (avg(/Template Module True Interfaces SNMPv2 Qtech/net.if.in[ifHCInOctets.{#SNMPINDEX}],5m)>({$IF_UTIL_MAX:"{#IFNAME}"}/100)*last(/Template Module True Interfaces SNMPv2 Qtech/net.if.speed[ifHighSpeed.{#SNMPINDEX}]) or
+                avg(/Template Module True Interfaces SNMPv2 Qtech/net.if.out[ifHCOutOctets.{#SNMPINDEX}],5m)>({$IF_UTIL_MAX:"{#IFNAME}"}/100)*last(/Template Module True Interfaces SNMPv2 Qtech/net.if.speed[ifHighSpeed.{#SNMPINDEX}])) and
+                last(/Template Module True Interfaces SNMPv2 Qtech/net.if.speed[ifHighSpeed.{#SNMPINDEX}])>0 and find(/Template Module True Interfaces SNMPv2 Qtech/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_PROBE")=0
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: |
+                (avg(/Template Module True Interfaces SNMPv2 Qtech/net.if.in[ifHCInOctets.{#SNMPINDEX}],5m)<=(({$IF_UTIL_MAX:"{#IFNAME}"}-3)/100)*last(/Template Module True Interfaces SNMPv2 Qtech/net.if.speed[ifHighSpeed.{#SNMPINDEX}]) and
+                avg(/Template Module True Interfaces SNMPv2 Qtech/net.if.out[ifHCOutOctets.{#SNMPINDEX}],5m)<=(({$IF_UTIL_MAX:"{#IFNAME}"}-3)/100)*last(/Template Module True Interfaces SNMPv2 Qtech/net.if.speed[ifHighSpeed.{#SNMPINDEX}])) or 
+                find(/Template Module True Interfaces SNMPv2 Qtech/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_PROBE")=1
+              name: 'Interface {#IFNAME}({#IFALIAS}): High bandwidth usage > {$IF_UTIL_MAX:"{#IFNAME}"}%.'
+              priority: HIGH
+              description: |
+                Input last value: {ITEM.LASTVALUE1},
+                Output lastvalue: {ITEM.LASTVALUE3}.
+            - uuid: 5683746aad1a4ec3833fea524f93e6f9
+              expression: 'last(/Template Module True Interfaces SNMPv2 Qtech/net.if.status[ifOperStatus.{#SNMPINDEX}])=1 and find(/Template Module True Interfaces SNMPv2 Qtech/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_CORE")=1 and (last(/Template Module True Interfaces SNMPv2 Qtech/net.if.in[ifHCInOctets.{#SNMPINDEX}])-last(/Template Module True Interfaces SNMPv2 Qtech/net.if.in[ifHCInOctets.{#SNMPINDEX}],#2))>(last(/Template Module True Interfaces SNMPv2 Qtech/net.if.speed[ifHighSpeed.{#SNMPINDEX}])/100*{$INHS_TRAFIC_LOSS_LIMIT:"{#IFNAME}"})'
+              name: 'Interface {#IFNAME}({#IFALIAS}): Input traffic loss > {$IN_TRAFIC_LOSS_LIMIT:"{#IFNAME}"} % from HighSpeed'
+              priority: WARNING
+              description: 'Input: {ITEM.LASTVALUE3}'
+            - uuid: 7aa7c822bd9e4822b3fa4ca69f1e1d12
+              expression: '{$IFCONTROL:"{#IFNAME}"}=1 and (last(/Template Module True Interfaces SNMPv2 Qtech/net.if.status[ifOperStatus.{#SNMPINDEX}])=2 and (last(/Template Module True Interfaces SNMPv2 Qtech/net.if.status[ifOperStatus.{#SNMPINDEX}],#1)<>last(/Template Module True Interfaces SNMPv2 Qtech/net.if.status[ifOperStatus.{#SNMPINDEX}],#2))=1)'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'last(/Template Module True Interfaces SNMPv2 Qtech/net.if.status[ifOperStatus.{#SNMPINDEX}])<>2 or find(/Template Module True Interfaces SNMPv2 Qtech/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_RESERV")=1 or find(/Template Module True Interfaces SNMPv2 Qtech/net.if[ifAlias.{#SNMPINDEX}],,"regexp","FREE")=1 or last(/Template Module True Interfaces SNMPv2 Qtech/net.if.status[ifAdminStatus.{#SNMPINDEX}])=2'
+              name: 'Interface {#IFNAME}({#IFALIAS}): Link change state UP to DOWN'
+              priority: AVERAGE
+              description: |
+                Last value: {ITEM.LASTVALUE1}.
+                Interface is down
+            - uuid: 56fa739eb9e94d97a59b8f88cd95022d
+              expression: 'last(/Template Module True Interfaces SNMPv2 Qtech/net.if.in[ifHCInMulticastPkts.{#SNMPINDEX}],#1)>{$MCAST_LIMIT:"{{#IFNAME}.regsub(ae, ifvirtual)}"} and find(/Template Module True Interfaces SNMPv2 Qtech/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_MCAST|_CORE|_PROBE")=0 and last(/Template Module True Interfaces SNMPv2 Qtech/net.if.in[ifHCInMulticastPkts.{#SNMPINDEX}],#2)>{$MCAST_LIMIT:"{{#IFNAME}.regsub(ae, ifvirtual)}"} and last(/Template Module True Interfaces SNMPv2 Qtech/net.if.in[ifHCInMulticastPkts.{#SNMPINDEX}],#3)>{$MCAST_LIMIT:"{{#IFNAME}.regsub(ae, ifvirtual)}"}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: '(last(/Template Module True Interfaces SNMPv2 Qtech/net.if.in[ifHCInMulticastPkts.{#SNMPINDEX}],#1)<0.5*{$MCAST_LIMIT:"{{#IFNAME}.regsub(ae, ifvirtual)}"} and last(/Template Module True Interfaces SNMPv2 Qtech/net.if.in[ifHCInMulticastPkts.{#SNMPINDEX}],#2)<0.5*{$MCAST_LIMIT:"{{#IFNAME}.regsub(ae, ifvirtual)}"}) or find(/Template Module True Interfaces SNMPv2 Qtech/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_MCAST|_CORE|_PROBE")=1'
+              name: 'Interface {#IFNAME}({#IFALIAS}): multicast traffic > {$MCAST_LIMIT:"{{#IFNAME}.regsub(ae, ifvirtual)}"} pps.'
+              priority: WARNING
+              description: 'Multicast: Input {ITEM.LASTVALUE1}'
+            - uuid: 4d48be67486b4976b93241c9d7b6b46d
+              expression: 'last(/Template Module True Interfaces SNMPv2 Qtech/net.if.status[ifOperStatus.{#SNMPINDEX}])=2 and last(/Template Module True Interfaces SNMPv2 Qtech/net.if.status[ifAdminStatus.{#SNMPINDEX}])=1 and find(/Template Module True Interfaces SNMPv2 Qtech/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_RESERV|_PRI|_SEC|^RESERV$|^FREE$")=0'
+              name: 'Interface {#IFNAME}({#IFALIAS}): Operating DOWN and Admin  UP'
+              priority: INFO
+              description: |
+                Last value: {ITEM.LASTVALUE1}.
+                Interface is down
+              dependencies:
+                - name: 'Interface {#IFNAME}({#IFALIAS}): Link change state UP to DOWN'
+                  expression: '{$IFCONTROL:"{#IFNAME}"}=1 and (last(/Template Module True Interfaces SNMPv2 Qtech/net.if.status[ifOperStatus.{#SNMPINDEX}])=2 and (last(/Template Module True Interfaces SNMPv2 Qtech/net.if.status[ifOperStatus.{#SNMPINDEX}],#1)<>last(/Template Module True Interfaces SNMPv2 Qtech/net.if.status[ifOperStatus.{#SNMPINDEX}],#2))=1)'
+                  recovery_expression: 'last(/Template Module True Interfaces SNMPv2 Qtech/net.if.status[ifOperStatus.{#SNMPINDEX}])<>2 or find(/Template Module True Interfaces SNMPv2 Qtech/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_RESERV")=1 or find(/Template Module True Interfaces SNMPv2 Qtech/net.if[ifAlias.{#SNMPINDEX}],,"regexp","FREE")=1 or last(/Template Module True Interfaces SNMPv2 Qtech/net.if.status[ifAdminStatus.{#SNMPINDEX}])=2'
+            - uuid: 325c5591e3f34e7ba574cb9298d03198
+              expression: |
+                (last(/Template Module True Interfaces SNMPv2 Qtech/net.if.in.discards[ifInDiscards.{#SNMPINDEX}],#1)>{$IF_DISCARDS_WARN:"{#IFNAME}"} and last(/Template Module True Interfaces SNMPv2 Qtech/net.if.in.discards[ifInDiscards.{#SNMPINDEX}],#2)>{$IF_DISCARDS_WARN:"{#IFNAME}"})
+                or (last(/Template Module True Interfaces SNMPv2 Qtech/net.if.out.discards[ifOutDiscards.{#SNMPINDEX}],#1)>{$IF_DISCARDS_WARN:"{#IFNAME}"} and last(/Template Module True Interfaces SNMPv2 Qtech/net.if.out.discards[ifOutDiscards.{#SNMPINDEX}],#2)>{$IF_DISCARDS_WARN:"{#IFNAME}"})
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'last(/Template Module True Interfaces SNMPv2 Qtech/net.if.in.discards[ifInDiscards.{#SNMPINDEX}],#1)<{$IF_DISCARDS_WARN:"{#IFNAME}"} and last(/Template Module True Interfaces SNMPv2 Qtech/net.if.out.discards[ifOutDiscards.{#SNMPINDEX}],#1)<{$IF_DISCARDS_WARN:"{#IFNAME}"} and last(/Template Module True Interfaces SNMPv2 Qtech/net.if.in.discards[ifInDiscards.{#SNMPINDEX}],#2)<{$IF_DISCARDS_WARN:"{#IFNAME}"} and last(/Template Module True Interfaces SNMPv2 Qtech/net.if.out.discards[ifOutDiscards.{#SNMPINDEX}],#2)<{$IF_DISCARDS_WARN:"{#IFNAME}"} and last(/Template Module True Interfaces SNMPv2 Qtech/net.if.in.discards[ifInDiscards.{#SNMPINDEX}],#3)<{$IF_DISCARDS_WARN:"{#IFNAME}"} and last(/Template Module True Interfaces SNMPv2 Qtech/net.if.out.discards[ifOutDiscards.{#SNMPINDEX}],#3)<{$IF_DISCARDS_WARN:"{#IFNAME}"}'
+              name: 'Interface {#IFNAME}({#IFALIAS}): Packets discarded rate > {$IF_DISCARDS_WARN:"{#IFNAME}"} pps.'
+              priority: WARNING
+              description: |
+                Last value Input: {ITEM.LASTVALUE1}.
+                Last value Output: {ITEM.LASTVALUE2}.
+                Recovers when below 80% of {$IF_DISCARDS_WARN:"{#IFNAME}"} threshold
+            - uuid: 9257c811f8f54658be442251cf2f4ae9
+              expression: |
+                avg(/Template Module True Interfaces SNMPv2 Qtech/net.if.in.errors[ifInErrors.{#SNMPINDEX}],5m)>{$IF_ERRORS_WARN:"{#IFNAME}"}
+                or avg(/Template Module True Interfaces SNMPv2 Qtech/net.if.out.errors[ifOutErrors.{#SNMPINDEX}],5m)>{$IF_ERRORS_WARN:"{#IFNAME}"}
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: |
+                avg(/Template Module True Interfaces SNMPv2 Qtech/net.if.in.errors[ifInErrors.{#SNMPINDEX}],20m)<{$IF_ERRORS_WARN:"{#IFNAME}"}*0.1
+                and avg(/Template Module True Interfaces SNMPv2 Qtech/net.if.out.errors[ifOutErrors.{#SNMPINDEX}],20m)<{$IF_ERRORS_WARN:"{#IFNAME}"}*0.1
+              name: 'Interface {#IFNAME}({#IFALIAS}): Большое количество ошибок > {$IF_ERRORS_WARN:"{#IFNAME}"}.'
+              priority: WARNING
+              description: |
+                Last value: {ITEM.LASTVALUE1}.
+                Recovers when below 80% of {$IF_ERRORS_WARN:"{#IFNAME}"} threshold
+              dependencies:
+                - name: 'Interface {#IFNAME}({#IFALIAS}): Увеличение количества FSC(CRC) ошибок'
+                  expression: 'last(/Template Module True Interfaces SNMPv2 Qtech/net.if.fscError[{#SNMPINDEX}],#1)>{$IF_FSC_ERRORS_THOLD:"{#IFNAME}"} and last(/Template Module True Interfaces SNMPv2 Qtech/net.if.fscError[{#SNMPINDEX}],#2)>{$IF_FSC_ERRORS_THOLD:"{#IFNAME}"}'
+                  recovery_expression: 'last(/Template Module True Interfaces SNMPv2 Qtech/net.if.fscError[{#SNMPINDEX}],#1)<{$IF_FSC_ERRORS_THOLD:"{#IFNAME}"} and last(/Template Module True Interfaces SNMPv2 Qtech/net.if.fscError[{#SNMPINDEX}],#2)<{$IF_FSC_ERRORS_THOLD:"{#IFNAME}"} and last(/Template Module True Interfaces SNMPv2 Qtech/net.if.fscError[{#SNMPINDEX}],#3)<{$IF_FSC_ERRORS_THOLD:"{#IFNAME}"} and last(/Template Module True Interfaces SNMPv2 Qtech/net.if.fscError[{#SNMPINDEX}],#4)<{$IF_FSC_ERRORS_THOLD:"{#IFNAME}"} and last(/Template Module True Interfaces SNMPv2 Qtech/net.if.fscError[{#SNMPINDEX}],#5)<{$IF_FSC_ERRORS_THOLD:"{#IFNAME}"}'
+            - uuid: 74752b62a7d9401db719fc0678e28673
+              expression: |
+                (avg(/Template Module True Interfaces SNMPv2 Qtech/net.if.in[ifHCInOctets.{#SNMPINDEX}],15m)>({$IF_UTIL_MAX_CORE:"{#IFNAME}"}/100)*last(/Template Module True Interfaces SNMPv2 Qtech/net.if.speed[ifHighSpeed.{#SNMPINDEX}]) or
+                avg(/Template Module True Interfaces SNMPv2 Qtech/net.if.out[ifHCOutOctets.{#SNMPINDEX}],15m)>({$IF_UTIL_MAX_CORE:"{#IFNAME}"}/100)*last(/Template Module True Interfaces SNMPv2 Qtech/net.if.speed[ifHighSpeed.{#SNMPINDEX}])) and
+                last(/Template Module True Interfaces SNMPv2 Qtech/net.if.speed[ifHighSpeed.{#SNMPINDEX}])>0 and find(/Template Module True Interfaces SNMPv2 Qtech/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_CORE")=1
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: |
+                (avg(/Template Module True Interfaces SNMPv2 Qtech/net.if.in[ifHCInOctets.{#SNMPINDEX}],15m)<(({$IF_UTIL_MAX_CORE:"{#IFNAME}"}-3)/100)*last(/Template Module True Interfaces SNMPv2 Qtech/net.if.speed[ifHighSpeed.{#SNMPINDEX}]) and
+                avg(/Template Module True Interfaces SNMPv2 Qtech/net.if.out[ifHCOutOctets.{#SNMPINDEX}],15m)<(({$IF_UTIL_MAX_CORE:"{#IFNAME}"}-3)/100)*last(/Template Module True Interfaces SNMPv2 Qtech/net.if.speed[ifHighSpeed.{#SNMPINDEX}])  and find(/Template Module True Interfaces SNMPv2 Qtech/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_CORE")=1) or find(/Template Module True Interfaces SNMPv2 Qtech/net.if[ifAlias.{#SNMPINDEX}],,"regexp","_CORE")=0
+              name: 'Высокая загрузка интерфейса в ядре сети {#IFNAME}({#IFALIAS}):> {$IF_UTIL_MAX_CORE:"{#IFNAME}"}%.'
+              priority: HIGH
+              description: |
+                Input last value: {ITEM.LASTVALUE1},
+                Output lastvalue: {ITEM.LASTVALUE3}.
+          graph_prototypes:
+            - uuid: 90004d814f8a414098e5df09d3a5c8ca
+              name: 'Interface {#IFNAME}({#IFALIAS}): Network traffic'
+              graph_items:
+                - drawtype: GRADIENT_LINE
+                  color: 1A7C11
+                  item:
+                    host: 'Template Module True Interfaces SNMPv2 Qtech'
+                    key: 'net.if.in[ifHCInOctets.{#SNMPINDEX}]'
+                - sortorder: '1'
+                  drawtype: BOLD_LINE
+                  color: 2774A4
+                  item:
+                    host: 'Template Module True Interfaces SNMPv2 Qtech'
+                    key: 'net.if.out[ifHCOutOctets.{#SNMPINDEX}]'
+                - sortorder: '2'
+                  color: F63100
+                  yaxisside: RIGHT
+                  item:
+                    host: 'Template Module True Interfaces SNMPv2 Qtech'
+                    key: 'net.if.out.errors[ifOutErrors.{#SNMPINDEX}]'
+                - sortorder: '3'
+                  color: A54F10
+                  yaxisside: RIGHT
+                  item:
+                    host: 'Template Module True Interfaces SNMPv2 Qtech'
+                    key: 'net.if.in.errors[ifInErrors.{#SNMPINDEX}]'
+                - sortorder: '4'
+                  color: FC6EA3
+                  yaxisside: RIGHT
+                  item:
+                    host: 'Template Module True Interfaces SNMPv2 Qtech'
+                    key: 'net.if.out.discards[ifOutDiscards.{#SNMPINDEX}]'
+                - sortorder: '5'
+                  color: 6C59DC
+                  yaxisside: RIGHT
+                  item:
+                    host: 'Template Module True Interfaces SNMPv2 Qtech'
+                    key: 'net.if.in.discards[ifInDiscards.{#SNMPINDEX}]'
+          master_item:
+            key: net.if.discovery
+        - uuid: 58359b19bd834311a4cdd0ed75090c9c
+          name: 'POE Interface'
+          type: DEPENDENT
+          key: net.if.poe
+          delay: '0'
+          filter:
+            conditions:
+              - macro: '{#IFADMINSTATUS}'
+                value: '1'
+                formulaid: A
+              - macro: '{#IFALIAS}'
+                value: \w+
+                formulaid: B
+              - macro: '{#IFNAME}'
+                value: '@Network interfaces for discovery'
+                formulaid: C
+              - macro: '{#POESTATUS}'
+                value: '0'
+                operator: NOT_MATCHES_REGEX
+                formulaid: D
+          item_prototypes:
+            - uuid: 81f0e112dfc74925adf3532209aadef5
+              name: 'Interface {#IFNAME}({#IFALIAS}): POE Current Current'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.4.1.27514.100.26.10.1.6.{#SNMPINDEX}'
+              key: 'poePortCurrentCurrent.[{#SNMPINDEX}]'
+              delay: 5m
+              units: mA
+              tags:
+                - tag: Application
+                  value: POE
+            - uuid: 513214e993f448a0b8082063226e6975
+              name: 'Interface {#IFNAME}({#IFALIAS}): POE Current Power'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.4.1.27514.100.26.10.1.5.{#SNMPINDEX}'
+              key: 'poePortCurrentPower.[{#SNMPINDEX}]'
+              delay: 5m
+              units: '!mW'
+              tags:
+                - tag: Application
+                  value: POE
+            - uuid: f46b629a9af64c59843ffb0bbb0ced2a
+              name: 'Interface {#IFNAME}({#IFALIAS}): POE Current Voltage'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.4.1.27514.100.26.10.1.7.{#SNMPINDEX}'
+              key: 'poePortCurrentVoltage.[{#SNMPINDEX}]'
+              delay: 5m
+              units: V
+              tags:
+                - tag: Application
+                  value: POE
+            - uuid: 8e6ce4566c2f42c68511cba15d03ccbe
+              name: 'Interface {#IFNAME}({#IFALIAS}): POE MAX Power'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.4.1.27514.100.26.10.1.4.{#SNMPINDEX}'
+              key: 'poePortMaxPower.[{#SNMPINDEX}]'
+              delay: 1h
+              units: '!mW'
+              tags:
+                - tag: Application
+                  value: POE
+            - uuid: eb4ed2557fd14f5f8c26cebb77aa2d68
+              name: 'Interface {#IFNAME}({#IFALIAS}): POE Class Connect'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.4.1.27514.100.26.10.1.9.{#SNMPINDEX}'
+              key: 'poePortPdClass.[{#SNMPINDEX}]'
+              delay: 5m
+              tags:
+                - tag: Application
+                  value: POE
+            - uuid: 3e7eda3021af491088c791119761d722
+              name: 'Interface {#IFNAME}({#IFALIAS}): POE Priority'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.4.1.27514.100.26.10.1.3.{#SNMPINDEX}'
+              key: 'poePortPriority.[{#SNMPINDEX}]'
+              delay: 5m
+              valuemap:
+                name: 'POE Priority'
+              tags:
+                - tag: Application
+                  value: POE
+            - uuid: c097a64fd03c473bbafd207435d5f71a
+              name: 'Interface {#IFNAME}({#IFALIAS}): POE status'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.4.1.27514.100.26.10.1.2.{#SNMPINDEX}'
+              key: 'poePortStatus.[{#SNMPINDEX}]'
+              delay: 5m
+              valuemap:
+                name: POE
+              tags:
+                - tag: Application
+                  value: POE
+            - uuid: cde8f6d49a5e4f368a431761b5464e75
+              name: 'Interface {#IFNAME}({#IFALIAS}): POE Utilization Power'
+              type: CALCULATED
+              key: 'poePortUtilPower.[{#SNMPINDEX}]'
+              delay: 5m
+              value_type: FLOAT
+              units: '%'
+              params: 'last(//poePortCurrentPower.[{#SNMPINDEX}])/last(//poePortMaxPower.[{#SNMPINDEX}])*100'
+              tags:
+                - tag: Application
+                  value: POE
+          master_item:
+            key: net.if.discovery
+      macros:
+        - macro: '{$BCAST_LIMIT}'
+          value: '1000'
+        - macro: '{$BCAST_LIMIT:"ifvirtual"}'
+          value: '999999999999999999999999999999999'
+        - macro: '{$BCAST_PER_LIMIT_RECOVERY}'
+          value: '0.5'
+        - macro: '{$IFCONTROL}'
+          value: '1'
+        - macro: '{$IF_DISCARDS_WARN}'
+          value: '200'
+        - macro: '{$IF_ERRORS_WARN}'
+          value: '2'
+        - macro: '{$IF_FSC_ERRORS_ALERT}'
+          value: '1000'
+        - macro: '{$IF_FSC_ERRORS_THOLD}'
+          value: '10'
+        - macro: '{$IF_UTIL_INFO}'
+          value: '75'
+        - macro: '{$IF_UTIL_MAX}'
+          value: '90'
+        - macro: '{$IF_UTIL_MAX_CORE}'
+          value: '75'
+        - macro: '{$IF_UTIL_MAX_INFO}'
+          value: '43'
+        - macro: '{$INHS_TRAFIC_LOSS_LIMIT}'
+          value: '25'
+        - macro: '{$IN_TRAFIC_LOSS_LIMIT}'
+          value: '50'
+        - macro: '{$MCAST_LIMIT}'
+          value: '1000'
+        - macro: '{$MCAST_LIMIT:"ifvirtual"}'
+          value: '999999999999999999999999999999999'
+        - macro: '{$OUTHS_TRAFIC_LOSS_LIMIT}'
+          value: '25'
+        - macro: '{$OUT_TRAFIC_LOSS_LIMIT}'
+          value: '65'
+      valuemaps:
+        - uuid: 9303c3c485f84808b915df43561ff4da
+          name: 'IF-MIB::ifOperStatus'
+          mappings:
+            - value: '1'
+              newvalue: up
+            - value: '2'
+              newvalue: down
+            - value: '3'
+              newvalue: testing
+            - value: '4'
+              newvalue: unknown
+            - value: '5'
+              newvalue: dormant
+            - value: '6'
+              newvalue: notPresent
+            - value: '7'
+              newvalue: lowerLayerDown
+        - uuid: 8ebe8d79808240f288979b85cb2a8e47
+          name: POE
+          mappings:
+            - value: '0'
+              newvalue: disable
+            - value: '1'
+              newvalue: enableAuto
+            - value: '2'
+              newvalue: enableStatic
+        - uuid: 32efb041d6084bb8a0ebe2566bc7ab46
+          name: 'POE Priority'
+          mappings:
+            - value: '0'
+              newvalue: critical
+            - value: '1'
+              newvalue: high
+            - value: '2'
+              newvalue: low
